@@ -43,15 +43,6 @@
           <span>Studio Creator</span>
         </button>
 
-        <button type="button" class="nav-tab" id="tabBtnBatch" data-tab="batch">
-          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-            <path d="M9 14l2 2 4-4"/>
-          </svg>
-          <span>Batch Multi-Generator</span>
-          <span class="pill-count" id="batchBadgeCount">Multiple</span>
-        </button>
 
         <button type="button" class="nav-tab" id="tabBtnLibrary" data-tab="library">
           <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,6 +73,31 @@
       </div>
     </div>
   </header>
+
+  <!-- Global Cloud Status & Setup Banner -->
+  <div class="cloud-notification-banner" id="cloudNotificationBanner" style="display:none;">
+    <div class="banner-inner">
+      <div class="banner-left">
+        <span class="banner-pulse" id="bannerPulseDot"></span>
+        <div class="banner-text-group">
+          <strong id="bannerTitle">Supabase Cloud Database</strong>
+          <p id="bannerDesc">Initializing connection to Supabase PostgreSQL cluster...</p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button type="button" class="btn btn-gold btn-xs" id="btnBannerCopySql">
+          <span>📋 Copy SQL Migration</span>
+        </button>
+        <a href="https://supabase.com/dashboard/project/quaggsbpiewmxcxceoyg/sql/new" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs" id="btnBannerOpenSql">
+          <span>Open Supabase SQL Editor ↗</span>
+        </a>
+        <button type="button" class="btn btn-secondary btn-xs" id="btnBannerOpenModal">
+          <span>Cloud Settings</span>
+        </button>
+        <button type="button" class="btn-banner-dismiss" id="btnDismissBanner" title="Dismiss banner">✕</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Notification Banner Toast -->
   <div class="toast-container" id="toastContainer"></div>
@@ -694,99 +710,6 @@
     </section>
 
 
-    <!-- ============================================== -->
-    <!-- TAB 2: BATCH MULTI-GENERATOR                   -->
-    <!-- ============================================== -->
-    <section class="tab-panel" id="viewBatch" style="display:none;">
-      <div class="batch-container">
-        
-        <div class="batch-intro-card">
-          <div class="batch-intro-content">
-            <h2 class="section-heading">Multi-Code Fleet & Business Batch Generator</h2>
-            <p class="section-sub">Generate dozens of branded QR codes at once for fleet coaches, passenger routes, ticket desks, and operations.</p>
-          </div>
-          <div class="batch-actions-header">
-            <button type="button" class="btn btn-secondary btn-sm" id="btnLoadBatchTemplate">
-              <span>Load Sunseekers Fleet Sample</span>
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm text-danger" id="btnClearBatchRows">
-              <span>Clear All</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="batch-editor-card">
-          <div class="batch-toolbar">
-            <div class="batch-counts">
-              <span class="badge-tag" id="batchRowCountLabel">4 Codes in Queue</span>
-            </div>
-            <div class="batch-buttons">
-              <button type="button" class="btn btn-secondary btn-sm" id="btnAddBatchRow">
-                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                <span>Add Row</span>
-              </button>
-
-              <button type="button" class="btn btn-primary" id="btnGenerateAllBatch">
-                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
-                <span>Generate All QR Codes</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Dynamic Multi-Row Table -->
-          <div class="table-responsive">
-            <table class="batch-table" id="batchTable">
-              <thead>
-                <tr>
-                  <th style="width: 45px;">#</th>
-                  <th style="width: 25%;">QR Code Name / Label</th>
-                  <th style="width: 40%;">Destination Link (URL)</th>
-                  <th style="width: 20%;">Category Tag</th>
-                  <th style="width: 60px; text-align: center;">Action</th>
-                </tr>
-              </thead>
-              <tbody id="batchTableBody">
-                <!-- Rows injected dynamically via JS -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Batch Results Display Grid -->
-        <div class="batch-results-card" id="batchResultsSection" style="display:none;">
-          <div class="results-header">
-            <div>
-              <h3 class="results-title">Generated QR Codes (<span id="batchResultsCount">0</span>)</h3>
-              <p class="results-sub">All codes rendered with current Sunseekers brand styling and embedded logo</p>
-            </div>
-            <div class="results-actions">
-              <button type="button" class="btn btn-gold" id="btnDownloadBatchZip">
-                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                <span>Download All as ZIP Archive</span>
-              </button>
-              <button type="button" class="btn btn-secondary" id="btnSaveBatchToLibrary">
-                <span>Save All to Library</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="batch-preview-grid" id="batchPreviewGrid">
-            <!-- Rendered cards appear here -->
-          </div>
-        </div>
-
-      </div>
-    </section>
-
 
     <!-- ============================================== -->
     <!-- TAB 3: SAVED LIBRARY & PRINT CENTER            -->
@@ -849,7 +772,7 @@
             </svg>
           </div>
           <h3 class="empty-title">No Saved QR Codes Yet</h3>
-          <p class="empty-desc">Create custom branded codes in the Studio or generate fleet batches to save them here.</p>
+          <p class="empty-desc">Create custom branded codes in the Studio Creator to save them here.</p>
           <button type="button" class="btn btn-primary" id="btnEmptyGoStudio">Go to Studio Creator</button>
         </div>
 
@@ -907,7 +830,7 @@
       <div class="modal-header">
         <div class="modal-title-wrap">
           <h3 class="modal-title">Manage Business Categories</h3>
-          <p class="modal-desc">Create, rename, or delete categories used in Studio, Batch Generator, and Library.</p>
+          <p class="modal-desc">Create, organize, or delete categories used in Studio Creator and Library.</p>
         </div>
         <button type="button" class="modal-close-btn" id="btnCloseCategoryModal">✕</button>
       </div>
