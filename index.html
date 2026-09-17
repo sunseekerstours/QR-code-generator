@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sunseekers QR Code Generator | Branded Business & Fleet Studio</title>
+  <meta name="description" content="Generate high-resolution, custom branded QR codes for Sunseekers business operations, fleet management, booking links, and marketing.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Vendor libraries -->
+  <script src="vendor/qr-code-styling.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+</head>
+<body class="app-body">
+  <!-- Background Glow Accents -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Top Navigation / Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-identity">
+        <div class="brand-logo-wrap">
+          <img src="assets/sunseekers-logo.svg" alt="Sunseekers Logo" class="brand-logo-img">
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">SUNSEEKERS <span class="accent-badge">STUDIO</span></h1>
+          <p class="brand-tagline">Custom Branded QR Code Generator for Business & Fleet</p>
+        </div>
+      </div>
+
+      <nav class="app-navigation" aria-label="Main App Tabs">
+        <button type="button" class="nav-tab active" id="tabBtnStudio" data-tab="studio">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          <span>Studio Creator</span>
+        </button>
+
+        <button type="button" class="nav-tab" id="tabBtnBatch" data-tab="batch">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            <path d="M9 14l2 2 4-4"/>
+          </svg>
+          <span>Batch Multi-Generator</span>
+          <span class="pill-count" id="batchBadgeCount">Multiple</span>
+        </button>
+
+        <button type="button" class="nav-tab" id="tabBtnLibrary" data-tab="library">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          <span>Saved Library</span>
+          <span class="pill-count" id="libraryCountBadge">0</span>
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnQuickPrintSheet">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 6 2 18 2 18 9"/>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+            <rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          <span>Print Stands</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- MAIN VIEWPORT -->
+  <main class="app-main-content">
+    
+    <!-- ============================================== -->
+    <!-- TAB 1: STUDIO CREATOR                          -->
+    <!-- ============================================== -->
+    <section class="tab-panel active" id="viewStudio">
+      <div class="studio-layout">
+        
+        <!-- Left Column: Controls & Configuration -->
+        <div class="studio-controls-pane">
+          
+          <!-- 1. Content & Identity Section -->
+          <div class="control-card">
+            <div class="card-header">
+              <div class="card-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">1. Content & Link Setup</h2>
+                <p class="card-desc">Enter the destination link and identify this business code</p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="qrNameInput" class="form-label">
+                <span>QR Code Name / Label</span>
+                <span class="label-hint">Required for library & print</span>
+              </label>
+              <input type="text" id="qrNameInput" class="form-input" placeholder="e.g. Cape Town Express - Seat Booking" value="Sunseekers Express Booking">
+            </div>
+
+            <div class="grid-2col">
+              <div class="form-group">
+                <div class="label-with-action">
+                  <label for="qrCategorySelect" class="form-label" style="margin-bottom:0;">Category</label>
+                  <button type="button" class="btn-text-action" id="btnManageCategories" title="Add or delete categories">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>Manage</span>
+                  </button>
+                </div>
+                <select id="qrCategorySelect" class="form-select">
+                  <!-- Populated dynamically via JS -->
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="label-with-action">
+                  <label for="qrTypeSelect" class="form-label" style="margin-bottom:0;">Data Type</label>
+                  <button type="button" class="btn-text-action" id="btnManageTypes" title="Add or delete data types">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>Manage</span>
+                  </button>
+                </div>
+                <select id="qrTypeSelect" class="form-select">
+                  <!-- Populated dynamically via JS -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Dynamic Input Container based on Type -->
+            <div id="dynamicInputContainer">
+              <!-- URL Input Mode -->
+              <div class="form-group input-mode-block" id="modeUrlBlock">
+                <label for="qrUrlInput" class="form-label">
+                  <span>Destination Website Link</span>
+                  <span class="label-tag">Validates automatically</span>
+                </label>
+                <div class="input-with-button">
+                  <input type="url" id="qrUrlInput" class="form-input" placeholder="https://sunseekers.co.za/book" value="https://sunseekers.co.za/book-tickets">
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnTestUrl" title="Test link in new tab">Test</button>
+                </div>
+                <!-- Quick Link Chips -->
+                <div class="quick-chips">
+                  <span class="chips-label">Quick Presets:</span>
+                  <button type="button" class="chip" data-url="https://sunseekers.co.za/online-booking">Online Booking</button>
+                  <button type="button" class="chip" data-url="https://sunseekers.co.za/fleet-tracking">Live Fleet GPS</button>
+                  <button type="button" class="chip" data-url="https://sunseekers.co.za/luggage-claim">Baggage Claim</button>
+                  <button type="button" class="chip" data-url="https://wa.me/27821234567?text=Hi%20Sunseekers">WhatsApp Desk</button>
+                </div>
+              </div>
+
+              <!-- Wi-Fi Input Mode (Hidden by default) -->
+              <div class="form-group input-mode-block" id="modeWifiBlock" style="display:none;">
+                <div class="grid-2col">
+                  <div>
+                    <label class="form-label" for="wifiSsid">Network SSID</label>
+                    <input type="text" id="wifiSsid" class="form-input" placeholder="e.g. Sunseekers-Fleet-Guest" value="Sunseekers-Guest-HighSpeed">
+                  </div>
+                  <div>
+                    <label class="form-label" for="wifiEncryption">Security</label>
+                    <select id="wifiEncryption" class="form-select">
+                      <option value="WPA">WPA/WPA2</option>
+                      <option value="WEP">WEP</option>
+                      <option value="nopass">No Password (Open)</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                  <label class="form-label" for="wifiPassword">Network Password</label>
+                  <input type="text" id="wifiPassword" class="form-input" placeholder="Enter Wi-Fi password" value="SeekTheSun2026">
+                </div>
+              </div>
+
+              <!-- WhatsApp Input Mode (Hidden by default) -->
+              <div class="form-group input-mode-block" id="modeWhatsappBlock" style="display:none;">
+                <label class="form-label" for="waPhone">WhatsApp Phone (with Country Code)</label>
+                <input type="text" id="waPhone" class="form-input" placeholder="e.g. +27820000000" value="+27821234567">
+                <label class="form-label" for="waMsg" style="margin-top: 8px;">Pre-filled Message</label>
+                <input type="text" id="waMsg" class="form-input" placeholder="e.g. Hello Sunseekers, I would like to book a trip" value="Hello Sunseekers, I would like to inquire about ticket bookings.">
+              </div>
+
+              <!-- Contact vCard Mode (Hidden by default) -->
+              <div class="form-group input-mode-block" id="modeVcardBlock" style="display:none;">
+                <div class="grid-2col">
+                  <div>
+                    <label class="form-label" for="vcardName">Full Name / Business</label>
+                    <input type="text" id="vcardName" class="form-input" value="Sunseekers Travel Operations">
+                  </div>
+                  <div>
+                    <label class="form-label" for="vcardPhone">Phone Number</label>
+                    <input type="text" id="vcardPhone" class="form-input" value="+27 11 555 0199">
+                  </div>
+                </div>
+                <div class="grid-2col" style="margin-top: 10px;">
+                  <div>
+                    <label class="form-label" for="vcardEmail">Email Address</label>
+                    <input type="email" id="vcardEmail" class="form-input" value="info@sunseekers.co.za">
+                  </div>
+                  <div>
+                    <label class="form-label" for="vcardOrg">Department</label>
+                    <input type="text" id="vcardOrg" class="form-input" value="Customer Logistics">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Plain Text Mode -->
+              <div class="form-group input-mode-block" id="modeTextBlock" style="display:none;">
+                <label class="form-label" for="plainTextInput">Custom Text Content</label>
+                <textarea id="plainTextInput" class="form-textarea" rows="3" placeholder="Enter custom message, code, or instruction"></textarea>
+              </div>
+
+              <!-- Custom / Configurable Type Input Mode -->
+              <div class="form-group input-mode-block" id="modeCustomBlock" style="display:none;">
+                <label class="form-label" for="customTypeInput">
+                  <span id="customTypeLabel">Custom Data</span>
+                  <span class="label-tag" id="customTypePrefixTag">Prefix</span>
+                </label>
+                <div class="input-with-button">
+                  <input type="text" id="customTypeInput" class="form-input" placeholder="Enter value">
+                  <button type="button" class="btn btn-ghost btn-sm" id="btnTestCustomValue" title="Test in new tab">Test</button>
+                </div>
+                <p class="field-hint" id="customTypeHint" style="font-size: 0.76rem; color: var(--text-subtle); margin-top: 6px;"></p>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="qrSubtitleInput" class="form-label">
+                <span>Display Subtitle / Instructions</span>
+                <span class="label-hint">Shown on cards & stands</span>
+              </label>
+              <input type="text" id="qrSubtitleInput" class="form-input" placeholder="e.g. Scan with camera to book or view timetable" value="Point camera to view timetable & book seats">
+            </div>
+          </div>
+
+          <!-- 2. Visual Styling & Shapes -->
+          <div class="control-card">
+            <div class="card-header">
+              <div class="card-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">2. Pattern & Eye Shapes</h2>
+                <p class="card-desc">Choose modern patterns and corner eye aesthetics</p>
+              </div>
+            </div>
+
+            <!-- Body Dots Shape -->
+            <div class="form-group">
+              <label class="form-label">QR Body Pattern (Dots Style)</label>
+              <div class="shape-selector-grid" id="dotTypeSelector">
+                <button type="button" class="shape-btn" data-value="dots">
+                  <div class="shape-preview shape-dots"></div>
+                  <span>Dots</span>
+                </button>
+                <button type="button" class="shape-btn active" data-value="rounded">
+                  <div class="shape-preview shape-rounded"></div>
+                  <span>Rounded</span>
+                </button>
+                <button type="button" class="shape-btn" data-value="classy">
+                  <div class="shape-preview shape-classy"></div>
+                  <span>Classy</span>
+                </button>
+                <button type="button" class="shape-btn" data-value="classy-rounded">
+                  <div class="shape-preview shape-classy-round"></div>
+                  <span>Classy+</span>
+                </button>
+                <button type="button" class="shape-btn" data-value="extra-rounded">
+                  <div class="shape-preview shape-extra"></div>
+                  <span>Curved</span>
+                </button>
+                <button type="button" class="shape-btn" data-value="square">
+                  <div class="shape-preview shape-square"></div>
+                  <span>Square</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="grid-2col">
+              <!-- Corner Square Shape (Eye Outer) -->
+              <div class="form-group">
+                <label class="form-label" for="cornerSquareSelect">Eye Outer Frame</label>
+                <select id="cornerSquareSelect" class="form-select">
+                  <option value="extra-rounded" selected>Extra Rounded (Modern)</option>
+                  <option value="dot">Circle / Dot</option>
+                  <option value="square">Classic Square</option>
+                </select>
+              </div>
+
+              <!-- Corner Dot Shape (Eye Center) -->
+              <div class="form-group">
+                <label class="form-label" for="cornerDotSelect">Eye Inner Dot</label>
+                <select id="cornerDotSelect" class="form-select">
+                  <option value="dot" selected>Circular Dot</option>
+                  <option value="square">Square Dot</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Colors & Theme Gradients -->
+          <div class="control-card">
+            <div class="card-header">
+              <div class="card-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 2a7 7 0 0 0 7 7c0 3.87-3.13 7-7 7a7 7 0 0 1-7-7c0-3.87 3.13-7 7-7z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">3. Sunseekers Colors & Gradients</h2>
+                <p class="card-desc">Brand palettes, gradients, and custom color accents</p>
+              </div>
+            </div>
+
+            <!-- Curated Palette Selector -->
+            <div class="form-group">
+              <label class="form-label">Brand Color Palettes</label>
+              <div class="theme-preset-grid" id="themePresetGrid">
+                <button type="button" class="theme-pill active" data-theme="sunset">
+                  <span class="theme-swatch" style="background: linear-gradient(135deg, #F57C00 0%, #D84315 100%);"></span>
+                  <span>Sunset Gold</span>
+                </button>
+                <button type="button" class="theme-pill" data-theme="ocean">
+                  <span class="theme-swatch" style="background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);"></span>
+                  <span>Coastal Blue</span>
+                </button>
+                <button type="button" class="theme-pill" data-theme="onyx">
+                  <span class="theme-swatch" style="background: linear-gradient(135deg, #0F172A 0%, #334155 100%);"></span>
+                  <span>Midnight Onyx</span>
+                </button>
+                <button type="button" class="theme-pill" data-theme="safari">
+                  <span class="theme-swatch" style="background: linear-gradient(135deg, #D97706 0%, #78350F 100%);"></span>
+                  <span>Safari Amber</span>
+                </button>
+                <button type="button" class="theme-pill" data-theme="emerald">
+                  <span class="theme-swatch" style="background: linear-gradient(135deg, #059669 0%, #064E3B 100%);"></span>
+                  <span>Forest Express</span>
+                </button>
+                <button type="button" class="theme-pill" data-theme="custom">
+                  <span class="theme-swatch" style="background: linear-gradient(135deg, #EC4899 0%, #8B5CF6 100%);"></span>
+                  <span>Custom Color</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Color Controls -->
+            <div class="custom-color-panel" id="customColorPanel">
+              <div class="grid-2col">
+                <div class="form-group">
+                  <label class="form-label" for="colorModeSelect">Color Fill Style</label>
+                  <select id="colorModeSelect" class="form-select">
+                    <option value="linear" selected>Linear Gradient</option>
+                    <option value="radial">Radial Gradient</option>
+                    <option value="solid">Single Solid Color</option>
+                  </select>
+                </div>
+
+                <div class="form-group" id="gradientAngleGroup">
+                  <label class="form-label" for="gradientAngle">Gradient Angle: <span id="angleValue">45°</span></label>
+                  <input type="range" id="gradientAngle" min="0" max="360" value="45" class="form-range">
+                </div>
+              </div>
+
+              <div class="grid-3col">
+                <div class="form-group">
+                  <label class="form-label" for="primaryColor">Color 1 (Start)</label>
+                  <div class="color-picker-wrap">
+                    <input type="color" id="primaryColor" value="#F57C00" class="color-input">
+                    <span class="color-hex-label" id="primaryHex">#F57C00</span>
+                  </div>
+                </div>
+
+                <div class="form-group" id="secondaryColorGroup">
+                  <label class="form-label" for="secondaryColor">Color 2 (End)</label>
+                  <div class="color-picker-wrap">
+                    <input type="color" id="secondaryColor" value="#D84315" class="color-input">
+                    <span class="color-hex-label" id="secondaryHex">#D84315</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="bgColor">Background</label>
+                  <div class="color-picker-wrap">
+                    <input type="color" id="bgColor" value="#FFFFFF" class="color-input">
+                    <span class="color-hex-label" id="bgHex">#FFFFFF</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-toggle-row">
+                <label class="toggle-control">
+                  <input type="checkbox" id="transparentBgToggle">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Transparent QR Background (for overlaying on prints)</span>
+                </label>
+              </div>
+
+              <!-- Dedicated Eye Colors -->
+              <div class="form-toggle-row" style="margin-top: 10px;">
+                <label class="toggle-control">
+                  <input type="checkbox" id="customEyeColorsToggle">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Customize Corner Eye Colors Separately</span>
+                </label>
+              </div>
+
+              <div class="grid-2col" id="customEyeSection" style="display:none; margin-top: 10px;">
+                <div class="form-group">
+                  <label class="form-label" for="eyeFrameColor">Eye Outer Frame Color</label>
+                  <div class="color-picker-wrap">
+                    <input type="color" id="eyeFrameColor" value="#BF360C" class="color-input">
+                    <span class="color-hex-label" id="eyeFrameHex">#BF360C</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="eyeDotColor">Eye Inner Dot Color</label>
+                  <div class="color-picker-wrap">
+                    <input type="color" id="eyeDotColor" value="#F57C00" class="color-input">
+                    <span class="color-hex-label" id="eyeDotHex">#F57C00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Logo Customization -->
+          <div class="control-card">
+            <div class="card-header">
+              <div class="card-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">4. Business Logo & Insignia</h2>
+                <p class="card-desc">Upload your company logo or choose Sunseekers brand presets</p>
+              </div>
+            </div>
+
+            <!-- Preset Sunseekers Logos -->
+            <div class="form-group">
+              <label class="form-label">Select Business Preset Logo</label>
+              <div class="logo-preset-grid" id="logoPresetGrid">
+                <button type="button" class="logo-preset-btn active" data-src="assets/sunseekers-logo.svg" title="Sunseekers Official Logo">
+                  <img src="assets/sunseekers-logo.svg" alt="Sunseekers Logo">
+                  <span>Sunseekers</span>
+                </button>
+                <button type="button" class="logo-preset-btn" data-src="assets/bus-icon.svg" title="Fleet Luxury Coach">
+                  <img src="assets/bus-icon.svg" alt="Bus Icon">
+                  <span>Fleet Coach</span>
+                </button>
+                <button type="button" class="logo-preset-btn" data-src="assets/sun-badge.svg" title="Sun Emblem">
+                  <img src="assets/sun-badge.svg" alt="Sun Badge">
+                  <span>Sun Emblem</span>
+                </button>
+                <button type="button" class="logo-preset-btn" data-src="assets/ticket-icon.svg" title="Travel Ticket">
+                  <img src="assets/ticket-icon.svg" alt="Ticket Badge">
+                  <span>Ticket Pass</span>
+                </button>
+                <button type="button" class="logo-preset-btn" data-src="" title="No Logo">
+                  <div class="no-logo-icon">✕</div>
+                  <span>None</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Logo Upload File Picker -->
+            <div class="form-group">
+              <label class="form-label">Or Upload Your Business Logo</label>
+              <div class="file-dropzone" id="logoDropzone">
+                <input type="file" id="logoFileInput" accept="image/png, image/jpeg, image/svg+xml, image/webp" class="file-input-hidden">
+                <div class="dropzone-content">
+                  <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <p class="dropzone-title">Click or Drag & Drop Business Logo</p>
+                  <p class="dropzone-sub">PNG, JPG, SVG, WebP with transparent background recommended</p>
+                </div>
+              </div>
+              <div class="custom-logo-preview-row" id="customLogoRow" style="display:none;">
+                <img id="customLogoThumb" src="" alt="Custom Logo Preview" class="custom-thumb">
+                <span class="custom-logo-name" id="customLogoName">logo.png</span>
+                <button type="button" class="btn btn-ghost btn-xs text-danger" id="btnRemoveCustomLogo">Remove</button>
+              </div>
+            </div>
+
+            <!-- Logo Sizing & Margins -->
+            <div class="grid-2col">
+              <div class="form-group">
+                <label class="form-label" for="logoSizeRange">Logo Size: <span id="logoSizeLabel">30%</span></label>
+                <input type="range" id="logoSizeRange" min="0.15" max="0.38" step="0.01" value="0.30" class="form-range">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="logoMarginRange">Logo Margin / Padding: <span id="logoMarginLabel">3px</span></label>
+                <input type="range" id="logoMarginRange" min="0" max="12" step="1" value="3" class="form-range">
+              </div>
+            </div>
+
+            <div class="form-toggle-row">
+              <label class="toggle-control">
+                <input type="checkbox" id="hideBackgroundDotsToggle" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-label">Clear QR dots behind logo (Ensures 100% scan clarity)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 5. Display Frame & Banner -->
+          <div class="control-card">
+            <div class="card-header">
+              <div class="card-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 6h16M4 12h16M4 18h7"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="card-title">5. Frame & Call-to-Action Banner</h2>
+                <p class="card-desc">Add a branded "SCAN ME" or "BOOK NOW" frame around the code</p>
+              </div>
+            </div>
+
+            <div class="grid-2col">
+              <div class="form-group">
+                <label class="form-label" for="frameStyleSelect">Frame Style</label>
+                <select id="frameStyleSelect" class="form-select">
+                  <option value="none">No Frame (Clean Code Only)</option>
+                  <option value="bottom-banner" selected>Bottom Action Banner ("SCAN ME")</option>
+                  <option value="top-badge">Top Badge Header</option>
+                  <option value="full-card">Full Bus Stand Card</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="frameTextInput">Banner Text</label>
+                <input type="text" id="frameTextInput" class="form-input" value="SCAN TO BOOK" placeholder="e.g. SCAN ME">
+              </div>
+            </div>
+
+            <div class="grid-2col" id="frameColorRow">
+              <div class="form-group">
+                <label class="form-label" for="frameBgColor">Frame Banner Color</label>
+                <div class="color-picker-wrap">
+                  <input type="color" id="frameBgColor" value="#F57C00" class="color-input">
+                  <span class="color-hex-label" id="frameBgHex">#F57C00</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="frameTextColor">Frame Text Color</label>
+                <div class="color-picker-wrap">
+                  <input type="color" id="frameTextColor" value="#FFFFFF" class="color-input">
+                  <span class="color-hex-label" id="frameTextHex">#FFFFFF</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Sticky Live Preview & Action Hub -->
+        <div class="studio-preview-pane">
+          <div class="sticky-preview-card">
+            <div class="preview-header">
+              <div class="preview-title-row">
+                <span class="live-dot"></span>
+                <span class="preview-header-label">LIVE STUDIO PREVIEW</span>
+              </div>
+              <!-- Readability Meter -->
+              <div class="readability-badge" id="readabilityBadge" title="Calculated based on error correction and contrast">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span id="readabilityText">High Scan Reliability (Level Q)</span>
+              </div>
+            </div>
+
+            <!-- Frame Card Wrapper -->
+            <div class="display-card-wrapper" id="displayCardWrapper">
+              <!-- Top Banner if active -->
+              <div class="frame-banner frame-top" id="frameTopBanner" style="display:none;">
+                <span id="frameTopText">SCAN TO BOOK</span>
+              </div>
+
+              <!-- The Canvas Container -->
+              <div class="qr-canvas-holder" id="qrCanvasHolder">
+                <!-- Canvas is dynamically injected here by QRCodeStyling -->
+              </div>
+
+              <!-- Bottom Banner if active -->
+              <div class="frame-banner frame-bottom" id="frameBottomBanner">
+                <span id="frameBottomText">SCAN TO BOOK</span>
+              </div>
+
+              <!-- Business Info Footer below QR -->
+              <div class="card-info-footer" id="cardInfoFooter">
+                <h3 class="preview-code-name" id="previewCodeName">Sunseekers Express Booking</h3>
+                <p class="preview-code-sub" id="previewCodeSub">Point camera to view timetable & book seats</p>
+                <span class="preview-code-tag" id="previewCodeTag">Fleet & Buses</span>
+              </div>
+            </div>
+
+            <!-- Export Actions Bar -->
+            <div class="export-actions-bar">
+              <div class="action-buttons-grid">
+                <button type="button" class="btn btn-primary btn-block" id="btnDownloadPng">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span>Download PNG (HD)</span>
+                </button>
+
+                <button type="button" class="btn btn-secondary btn-block" id="btnDownloadSvg">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
+                  </svg>
+                  <span>Download SVG (Vector)</span>
+                </button>
+              </div>
+
+              <div class="secondary-actions-row">
+                <button type="button" class="btn btn-gold btn-block" id="btnSaveToLibrary">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+                  <span>Save to Sunseekers Library</span>
+                </button>
+
+                <button type="button" class="btn btn-outline" id="btnPrintCard">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                  </svg>
+                  <span>Print Stand Card</span>
+                </button>
+              </div>
+
+              <!-- Resolution / Format Details -->
+              <div class="export-settings-row">
+                <div class="res-control">
+                  <label for="exportSizeSelect" class="sub-label">Download Resolution:</label>
+                  <select id="exportSizeSelect" class="form-select select-inline">
+                    <option value="600">Standard Web (600 × 600px)</option>
+                    <option value="1200" selected>High-Res HD (1200 × 1200px)</option>
+                    <option value="2400">Ultra-HD Print (2400 × 2400px)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ============================================== -->
+    <!-- TAB 2: BATCH MULTI-GENERATOR                   -->
+    <!-- ============================================== -->
+    <section class="tab-panel" id="viewBatch" style="display:none;">
+      <div class="batch-container">
+        
+        <div class="batch-intro-card">
+          <div class="batch-intro-content">
+            <h2 class="section-heading">Multi-Code Fleet & Business Batch Generator</h2>
+            <p class="section-sub">Generate dozens of branded QR codes at once for fleet coaches, passenger routes, ticket desks, and operations.</p>
+          </div>
+          <div class="batch-actions-header">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnLoadBatchTemplate">
+              <span>Load Sunseekers Fleet Sample</span>
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm text-danger" id="btnClearBatchRows">
+              <span>Clear All</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="batch-editor-card">
+          <div class="batch-toolbar">
+            <div class="batch-counts">
+              <span class="badge-tag" id="batchRowCountLabel">4 Codes in Queue</span>
+            </div>
+            <div class="batch-buttons">
+              <button type="button" class="btn btn-secondary btn-sm" id="btnAddBatchRow">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Add Row</span>
+              </button>
+
+              <button type="button" class="btn btn-primary" id="btnGenerateAllBatch">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>Generate All QR Codes</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dynamic Multi-Row Table -->
+          <div class="table-responsive">
+            <table class="batch-table" id="batchTable">
+              <thead>
+                <tr>
+                  <th style="width: 45px;">#</th>
+                  <th style="width: 25%;">QR Code Name / Label</th>
+                  <th style="width: 40%;">Destination Link (URL)</th>
+                  <th style="width: 20%;">Category Tag</th>
+                  <th style="width: 60px; text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="batchTableBody">
+                <!-- Rows injected dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Batch Results Display Grid -->
+        <div class="batch-results-card" id="batchResultsSection" style="display:none;">
+          <div class="results-header">
+            <div>
+              <h3 class="results-title">Generated QR Codes (<span id="batchResultsCount">0</span>)</h3>
+              <p class="results-sub">All codes rendered with current Sunseekers brand styling and embedded logo</p>
+            </div>
+            <div class="results-actions">
+              <button type="button" class="btn btn-gold" id="btnDownloadBatchZip">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Download All as ZIP Archive</span>
+              </button>
+              <button type="button" class="btn btn-secondary" id="btnSaveBatchToLibrary">
+                <span>Save All to Library</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="batch-preview-grid" id="batchPreviewGrid">
+            <!-- Rendered cards appear here -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ============================================== -->
+    <!-- TAB 3: SAVED LIBRARY & PRINT CENTER            -->
+    <!-- ============================================== -->
+    <section class="tab-panel" id="viewLibrary" style="display:none;">
+      <div class="library-container">
+        
+        <div class="library-header-card">
+          <div class="library-header-info">
+            <h2 class="section-heading">Sunseekers QR Code Library</h2>
+            <p class="section-sub">Manage, organize, export, and print saved QR codes for your buses and offices.</p>
+          </div>
+          <div class="library-header-actions">
+            <button type="button" class="btn btn-primary" id="btnPrintAllCards">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+              <span>Print Display Sheets</span>
+            </button>
+            <button type="button" class="btn btn-secondary" id="btnExportLibraryJson">
+              <span>Backup Library</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="library-filter-bar">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="librarySearchInput" class="search-input" placeholder="Search by name, link, or category...">
+          </div>
+
+          <div class="category-filter-chips" id="libraryFilterChips">
+            <button type="button" class="filter-chip active" data-filter="all">All (<span id="countAll">0</span>)</button>
+            <button type="button" class="filter-chip" data-filter="Fleet & Buses">Fleet & Buses</button>
+            <button type="button" class="filter-chip" data-filter="Tickets & Booking">Tickets</button>
+            <button type="button" class="filter-chip" data-filter="Passenger Wi-Fi">Wi-Fi</button>
+            <button type="button" class="filter-chip" data-filter="Customer Feedback">Feedback</button>
+          </div>
+        </div>
+
+        <!-- Library Items Grid -->
+        <div class="library-grid" id="libraryGrid">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="libraryEmptyState" style="display:none;">
+          <div class="empty-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </div>
+          <h3 class="empty-title">No Saved QR Codes Yet</h3>
+          <p class="empty-desc">Create custom branded codes in the Studio or generate fleet batches to save them here.</p>
+          <button type="button" class="btn btn-primary" id="btnEmptyGoStudio">Go to Studio Creator</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: PRINTABLE DISPLAY SHEET DIALOG          -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="printModalBackdrop" style="display:none;">
+    <div class="modal-dialog print-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 class="modal-title">Sunseekers Display Stand & Printable Card Center</h3>
+          <p class="modal-desc">Formatted for standard A4 / Letter paper for table stands, seat backs, stickers, and counters.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnClosePrintModal">✕</button>
+      </div>
+
+      <div class="modal-toolbar no-print">
+        <div class="layout-choice">
+          <label class="form-label select-inline">Card Layout: </label>
+          <select id="printCardLayoutSelect" class="form-select select-inline">
+            <option value="stand">Table / Counter Stand Card (Foldable)</option>
+            <option value="sticker">Seat-back & Window Sticker (Compact 4-per-page)</option>
+            <option value="single">Large Poster / Display Board (1-per-page)</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" id="btnExecuteBrowserPrint">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"/>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+              <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            <span>Print Now</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Printable Area -->
+      <div class="printable-sheet-container" id="printableSheetContainer">
+        <!-- Rendered printable cards will be injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: CATEGORY MANAGEMENT DIALOG              -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="categoryModalBackdrop" style="display:none;">
+    <div class="modal-dialog manage-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 class="modal-title">Manage Business Categories</h3>
+          <p class="modal-desc">Create, rename, or delete categories used in Studio, Batch Generator, and Library.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseCategoryModal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Add New Category Form -->
+        <div class="add-manage-box">
+          <label class="form-label" for="newCategoryInput">Create New Category</label>
+          <div class="input-with-button">
+            <input type="text" id="newCategoryInput" class="form-input" placeholder="e.g. Airport Shuttle, Staff ID, Luggage Tag...">
+            <button type="button" class="btn btn-primary" id="btnAddNewCategory">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Add Category</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Categories List -->
+        <div class="manage-section-heading">
+          <span>Active Categories (<span id="categoryTotalCount">0</span>)</span>
+        </div>
+        <div class="manage-list" id="categoryManageList">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm text-danger" id="btnResetCategories">Reset to Defaults</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnDoneCategoryModal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: DATA TYPE MANAGEMENT DIALOG             -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="typeModalBackdrop" style="display:none;">
+    <div class="modal-dialog manage-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 class="modal-title">Manage Data Types & Protocols</h3>
+          <p class="modal-desc">Create custom business links or manage active action types.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseTypeModal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Add New Data Type Form -->
+        <div class="add-manage-box">
+          <h4 class="add-box-title">Create Custom Data Type</h4>
+          <p class="add-box-sub">Configure a custom prefix or URL template for your fleet or app.</p>
+          <div class="grid-2col" style="margin-top: 10px;">
+            <div>
+              <label class="form-label" for="newTypeName">Data Type Name</label>
+              <input type="text" id="newTypeName" class="form-input" placeholder="e.g. Direct Phone Call, Fleet Live GPS">
+            </div>
+            <div>
+              <label class="form-label" for="newTypePrefix">Protocol / URL Prefix</label>
+              <input type="text" id="newTypePrefix" class="form-input" placeholder="e.g. tel:, https://sunseekers.co.za/bus/">
+            </div>
+          </div>
+          <div class="grid-2col" style="margin-top: 10px;">
+            <div>
+              <label class="form-label" for="newTypePlaceholder">Input Placeholder</label>
+              <input type="text" id="newTypePlaceholder" class="form-input" placeholder="e.g. +27 82 123 4567, COACH-101">
+            </div>
+            <div>
+              <label class="form-label" for="newTypeHint">Helper Instruction</label>
+              <input type="text" id="newTypeHint" class="form-input" placeholder="e.g. Enter coach ID to track bus">
+            </div>
+          </div>
+          <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAddNewType">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Add Data Type</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Data Types List -->
+        <div class="manage-section-heading">
+          <span>Active Data Types (<span id="typeTotalCount">0</span>)</span>
+        </div>
+        <div class="manage-list" id="typeManageList">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost btn-sm text-danger" id="btnResetTypes">Reset to Defaults</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnDoneTypeModal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer no-print">
+    <div class="footer-container">
+      <p>Sunseekers Operations & Fleet Management © 2026 • Premium High-Resolution QR Engine</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
