@@ -12,6 +12,12 @@
   const STORAGE_KEY = 'sunseekers_qr_library_v1';
   const CATEGORIES_STORAGE_KEY = 'sunseekers_categories_v1';
   const TYPES_STORAGE_KEY = 'sunseekers_datatypes_v1';
+  const SUPABASE_STORAGE_KEY = 'sunseekers_supabase_v1';
+
+  const DEFAULT_SUPABASE_CONFIG = {
+    url: 'https://quaggsbpiewmxcxceoyg.supabase.co',
+    key: 'sb_publishable_4SXazBJJ4GlEWrDsq7yt4A_XT67YuoW'
+  };
 
   const DEFAULT_CATEGORIES = [
     'Fleet & Buses',
@@ -253,6 +259,14 @@
     categories: [],
     dataTypes: [],
 
+    // Supabase Cloud Sync Configuration
+    supabase: {
+      url: 'https://quaggsbpiewmxcxceoyg.supabase.co',
+      key: 'sb_publishable_4SXazBJJ4GlEWrDsq7yt4A_XT67YuoW',
+      connected: false,
+      tablesReady: false
+    },
+
     // Library items
     library: []
   };
@@ -431,7 +445,24 @@
     newTypeHint: document.getElementById('newTypeHint'),
     typeManageList: document.getElementById('typeManageList'),
     typeTotalCount: document.getElementById('typeTotalCount'),
-    btnResetTypes: document.getElementById('btnResetTypes')
+    btnResetTypes: document.getElementById('btnResetTypes'),
+
+    // Supabase Cloud Sync
+    btnSupabaseSync: document.getElementById('btnSupabaseSync'),
+    cloudStatusDot: document.getElementById('cloudStatusDot'),
+    cloudStatusLabel: document.getElementById('cloudStatusLabel'),
+    supabaseModalBackdrop: document.getElementById('supabaseModalBackdrop'),
+    btnCloseSupabaseModal: document.getElementById('btnCloseSupabaseModal'),
+    btnDoneSupabaseModal: document.getElementById('btnDoneSupabaseModal'),
+    supabaseUrlInput: document.getElementById('supabaseUrlInput'),
+    supabaseKeyInput: document.getElementById('supabaseKeyInput'),
+    btnTestSupabaseConn: document.getElementById('btnTestSupabaseConn'),
+    btnSaveSupabaseConfig: document.getElementById('btnSaveSupabaseConfig'),
+    btnCopySqlSchema: document.getElementById('btnCopySqlSchema'),
+    btnManualSyncNow: document.getElementById('btnManualSyncNow'),
+    modalStatusOrb: document.getElementById('modalStatusOrb'),
+    modalStatusTitle: document.getElementById('modalStatusTitle'),
+    modalStatusDesc: document.getElementById('modalStatusDesc')
   };
 
   // --------------------------------------------------------------------------
@@ -440,11 +471,13 @@
   function init() {
     loadCategories();
     loadDataTypes();
+    loadSupabaseConfig();
     loadLibraryFromStorage();
     setupNavigation();
     setupStudioEventListeners();
     setupCategoryManagement();
     setupTypeManagement();
+    setupSupabaseManagement();
     setupBatchGenerator();
     setupLibraryManager();
     setupPrintModal();
@@ -457,6 +490,9 @@
     initQRCodeInstance();
     renderBatchRows();
     renderLibrary();
+
+    // Check Supabase Cloud Health
+    checkSupabaseHealth();
   }
 
   // --------------------------------------------------------------------------
@@ -955,6 +991,305 @@
 
     switchDataType(id);
     showToast(`Created data type "${name}"!`, 'success');
+  }
+
+  // --------------------------------------------------------------------------
+  // SUPABASE CLOUD SYNC
+  // --------------------------------------------------------------------------
+  function loadSupabaseConfig() {
+    try {
+      const saved = localStorage.getItem(SUPABASE_STORAGE_KEY);
+      if (saved) {
+        state.supabase = { ...state.supabase, ...JSON.parse(saved) };
+      } else {
+        state.supabase.url = DEFAULT_SUPABASE_CONFIG.url;
+        state.supabase.key = DEFAULT_SUPABASE_CONFIG.key;
+        saveSupabaseConfig();
+      }
+    } catch (e) {
+      state.supabase.url = DEFAULT_SUPABASE_CONFIG.url;
+      state.supabase.key = DEFAULT_SUPABASE_CONFIG.key;
+    }
+
+    if (elements.supabaseUrlInput) elements.supabaseUrlInput.value = state.supabase.url;
+    if (elements.supabaseKeyInput) elements.supabaseKeyInput.value = state.supabase.key;
+  }
+
+  function saveSupabaseConfig() {
+    try {
+      localStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify({
+        url: state.supabase.url,
+        key: state.supabase.key
+      }));
+    } catch (e) {
+      console.warn('Could not save Supabase config', e);
+    }
+  }
+
+  function setupSupabaseManagement() {
+    elements.btnSupabaseSync.addEventListener('click', openSupabaseModal);
+    elements.btnCloseSupabaseModal.addEventListener('click', closeSupabaseModal);
+    elements.btnDoneSupabaseModal.addEventListener('click', closeSupabaseModal);
+    elements.supabaseModalBackdrop.addEventListener('click', (e) => {
+      if (e.target === elements.supabaseModalBackdrop) closeSupabaseModal();
+    });
+
+    elements.btnSaveSupabaseConfig.addEventListener('click', () => {
+      let rawUrl = (elements.supabaseUrlInput.value || '').trim();
+      rawUrl = rawUrl.replace(/\/rest\/v1\/?$/i, '').replace(/\/$/, '');
+      const rawKey = (elements.supabaseKeyInput.value || '').trim();
+
+      state.supabase.url = rawUrl;
+      state.supabase.key = rawKey;
+      saveSupabaseConfig();
+
+      showToast('Saved Supabase credentials. Testing...', 'info');
+      checkSupabaseHealth(true);
+    });
+
+    elements.btnTestSupabaseConn.addEventListener('click', () => {
+      checkSupabaseHealth(true);
+    });
+
+    elements.btnCopySqlSchema.addEventListener('click', copySqlSchemaToClipboard);
+    elements.btnManualSyncNow.addEventListener('click', syncAllToSupabase);
+  }
+
+  function openSupabaseModal() {
+    elements.supabaseModalBackdrop.style.display = 'flex';
+    elements.supabaseUrlInput.value = state.supabase.url;
+    elements.supabaseKeyInput.value = state.supabase.key;
+    checkSupabaseHealth(false);
+  }
+
+  function closeSupabaseModal() {
+    elements.supabaseModalBackdrop.style.display = 'none';
+  }
+
+  async function checkSupabaseHealth(showToasts = false) {
+    const url = state.supabase.url;
+    const key = state.supabase.key;
+
+    if (!url || !key) {
+      updateCloudStatus('disconnected', 'Disconnected', 'No Supabase credentials configured.');
+      return;
+    }
+
+    try {
+      // Test querying the qr_codes endpoint
+      const endpoint = `${url}/rest/v1/qr_codes?select=id&limit=1`;
+      const res = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'apikey': key,
+          'Authorization': `Bearer ${key}`
+        }
+      });
+
+      if (res.status === 200) {
+        state.supabase.connected = true;
+        state.supabase.tablesReady = true;
+        updateCloudStatus('connected', 'Supabase Cloud Connected', 'Database tables verified & real-time sync active.');
+        if (showToasts) showToast('Connected to Supabase PostgreSQL cluster!', 'success');
+
+        // Automatically pull cloud items and sync
+        await fetchCloudQRCodes();
+      } else if (res.status === 404) {
+        // Connected to Supabase, but schema tables haven't been created yet!
+        state.supabase.connected = true;
+        state.supabase.tablesReady = false;
+        updateCloudStatus('pending', 'Schema Setup Needed', 'Connected to Supabase! Run the SQL Setup Script in your SQL Editor to create tables.');
+        if (showToasts) showToast('Connected to Supabase! Run the SQL schema to create tables.', 'info');
+      } else {
+        const errorText = await res.text();
+        state.supabase.connected = false;
+        state.supabase.tablesReady = false;
+        updateCloudStatus('error', 'Auth Failed', `Supabase returned status ${res.status}. Check publishable key.`);
+        if (showToasts) showToast(`Supabase error (${res.status}): ${errorText}`, 'danger');
+      }
+    } catch (err) {
+      state.supabase.connected = false;
+      state.supabase.tablesReady = false;
+      updateCloudStatus('error', 'Connection Error', 'Unable to reach Supabase URL. Check your internet connection.');
+      if (showToasts) showToast('Failed to reach Supabase: ' + err.message, 'danger');
+    }
+  }
+
+  function updateCloudStatus(status, title, desc) {
+    elements.cloudStatusDot.className = 'cloud-dot';
+    elements.modalStatusOrb.className = 'status-orb';
+
+    if (status === 'connected') {
+      elements.cloudStatusDot.classList.add('connected');
+      elements.modalStatusOrb.classList.add('connected');
+      elements.cloudStatusLabel.textContent = 'Cloud Synced';
+    } else if (status === 'pending') {
+      elements.cloudStatusDot.classList.add('pending');
+      elements.modalStatusOrb.classList.add('pending');
+      elements.cloudStatusLabel.textContent = 'Setup Schema';
+    } else {
+      elements.cloudStatusDot.classList.add('error');
+      elements.modalStatusOrb.classList.add('error');
+      elements.cloudStatusLabel.textContent = 'Cloud Offline';
+    }
+
+    elements.modalStatusTitle.textContent = title;
+    elements.modalStatusDesc.textContent = desc;
+  }
+
+  async function fetchCloudQRCodes() {
+    if (!state.supabase.connected || !state.supabase.tablesReady) return;
+    try {
+      const url = `${state.supabase.url}/rest/v1/qr_codes?select=*&order=created_at.desc`;
+      const res = await fetch(url, {
+        headers: {
+          'apikey': state.supabase.key,
+          'Authorization': `Bearer ${state.supabase.key}`
+        }
+      });
+      if (res.ok) {
+        const cloudCodes = await res.json();
+        if (Array.isArray(cloudCodes) && cloudCodes.length) {
+          // Merge with local library without duplicates
+          const localIds = new Set(state.library.map(i => i.id));
+          let newItems = 0;
+          cloudCodes.forEach(cc => {
+            if (!localIds.has(cc.id)) {
+              state.library.unshift({
+                id: cc.id,
+                name: cc.name,
+                category: cc.category,
+                url: cc.url,
+                subtitle: cc.subtitle,
+                createdAt: cc.created_at,
+                configSnapshot: cc.config_snapshot
+              });
+              newItems++;
+            }
+          });
+          if (newItems > 0) {
+            saveLibraryToStorage();
+            renderLibrary();
+            showToast(`Synchronized ${newItems} QR codes from Supabase cloud!`, 'success');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching cloud codes:', e);
+    }
+  }
+
+  async function syncSingleQRCodeToSupabase(item) {
+    if (!state.supabase.connected || !state.supabase.tablesReady) return;
+    try {
+      const payload = {
+        id: item.id,
+        name: item.name,
+        category: item.category || 'Fleet & Buses',
+        url: item.url,
+        subtitle: item.subtitle || '',
+        config_snapshot: item.configSnapshot || {},
+        created_at: item.createdAt || new Date().toISOString()
+      };
+
+      await fetch(`${state.supabase.url}/rest/v1/qr_codes`, {
+        method: 'POST',
+        headers: {
+          'apikey': state.supabase.key,
+          'Authorization': `Bearer ${state.supabase.key}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.warn('Cloud sync error for single item:', e);
+    }
+  }
+
+  async function deleteSingleQRCodeFromSupabase(id) {
+    if (!state.supabase.connected || !state.supabase.tablesReady) return;
+    try {
+      await fetch(`${state.supabase.url}/rest/v1/qr_codes?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': state.supabase.key,
+          'Authorization': `Bearer ${state.supabase.key}`
+        }
+      });
+    } catch (e) {
+      console.warn('Cloud delete error:', e);
+    }
+  }
+
+  async function syncAllToSupabase() {
+    if (!state.supabase.connected || !state.supabase.tablesReady) {
+      showToast('Cannot sync: tables not ready in Supabase. Run SQL schema first.', 'danger');
+      return;
+    }
+
+    try {
+      showToast('Uploading all library codes to Supabase...', 'info');
+      let count = 0;
+      for (const item of state.library) {
+        await syncSingleQRCodeToSupabase(item);
+        count++;
+      }
+      showToast(`Uploaded ${count} QR codes to Supabase!`, 'success');
+    } catch (e) {
+      showToast('Sync error: ' + e.message, 'danger');
+    }
+  }
+
+  async function copySqlSchemaToClipboard() {
+    const sqlContent = `-- SUNSEEKERS QR CODE GENERATOR - SUPABASE SCHEMA
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE IF NOT EXISTS public.qr_codes (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Fleet & Buses',
+    url TEXT NOT NULL,
+    subtitle TEXT,
+    config_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.qr_categories (
+    id SERIAL PRIMARY KEY,
+    name TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.qr_data_types (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    prefix TEXT DEFAULT '',
+    placeholder TEXT DEFAULT '',
+    hint TEXT DEFAULT '',
+    is_builtin BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.qr_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.qr_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.qr_data_types ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow anon all on qr_codes" ON public.qr_codes;
+CREATE POLICY "Allow anon all on qr_codes" ON public.qr_codes FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow anon all on qr_categories" ON public.qr_categories;
+CREATE POLICY "Allow anon all on qr_categories" ON public.qr_categories FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow anon all on qr_data_types" ON public.qr_data_types;
+CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL USING (true) WITH CHECK (true);`;
+
+    try {
+      await navigator.clipboard.writeText(sqlContent);
+      showToast('SQL Schema copied to clipboard! Paste in Supabase SQL Editor and run.', 'success');
+    } catch (e) {
+      showToast('Could not auto-copy. Please open supabase_schema.sql directly.', 'info');
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -1757,7 +2092,7 @@
     let addedCount = 0;
     state.batchGeneratedQrs.forEach((entry) => {
       const id = 'sun_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-      state.library.unshift({
+      const item = {
         id: id,
         name: entry.item.name,
         category: entry.item.category || 'Fleet & Buses',
@@ -1765,7 +2100,9 @@
         subtitle: 'Scan for direct access',
         createdAt: new Date().toISOString(),
         configSnapshot: JSON.parse(JSON.stringify(state.config))
-      });
+      };
+      state.library.unshift(item);
+      syncSingleQRCodeToSupabase(item);
       addedCount++;
     });
 
@@ -1857,6 +2194,7 @@
 
     state.library.unshift(item);
     saveLibraryToStorage();
+    syncSingleQRCodeToSupabase(item);
     showToast(`Saved "${item.name}" to Sunseekers Library!`, 'success');
   }
 
@@ -1948,6 +2286,7 @@
       });
 
       card.querySelector('.btn-lib-del').addEventListener('click', () => {
+        deleteSingleQRCodeFromSupabase(item.id);
         state.library = state.library.filter(libItem => libItem.id !== item.id);
         saveLibraryToStorage();
         renderLibrary();

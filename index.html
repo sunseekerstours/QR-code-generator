@@ -64,6 +64,13 @@
       </nav>
 
       <div class="header-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnSupabaseSync" title="Supabase Cloud Database Settings">
+          <span class="cloud-dot" id="cloudStatusDot"></span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+          </svg>
+          <span id="cloudStatusLabel">Supabase Cloud</span>
+        </button>
         <button type="button" class="btn btn-secondary btn-sm" id="btnQuickPrintSheet">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 6 2 18 2 18 9"/>
@@ -998,6 +1005,73 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost btn-sm text-danger" id="btnResetTypes">Reset to Defaults</button>
         <button type="button" class="btn btn-primary btn-sm" id="btnDoneTypeModal">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: SUPABASE CLOUD SYNC DIALOG              -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="supabaseModalBackdrop" style="display:none;">
+    <div class="modal-dialog manage-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 class="modal-title">Supabase Cloud Database Sync</h3>
+          <p class="modal-desc">Sync your QR codes, custom categories, and data types to your Supabase project.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseSupabaseModal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Cloud Status Card -->
+        <div class="cloud-status-box" id="cloudStatusBox">
+          <div class="status-indicator-row">
+            <span class="status-orb" id="modalStatusOrb"></span>
+            <span class="status-title" id="modalStatusTitle">Checking Cloud Status...</span>
+          </div>
+          <p class="status-desc" id="modalStatusDesc">Connecting to your Supabase PostgreSQL cluster.</p>
+        </div>
+
+        <!-- Connection Settings -->
+        <div class="add-manage-box">
+          <h4 class="add-box-title">Project Credentials</h4>
+          <p class="add-box-sub">Your Supabase project URL and public anon/publishable API key.</p>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label" for="supabaseUrlInput">Project URL</label>
+            <input type="text" id="supabaseUrlInput" class="form-input" value="https://quaggsbpiewmxcxceoyg.supabase.co" placeholder="https://your-project.supabase.co">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="supabaseKeyInput">Publishable / Anon Key</label>
+            <input type="text" id="supabaseKeyInput" class="form-input" value="sb_publishable_4SXazBJJ4GlEWrDsq7yt4A_XT67YuoW" placeholder="sb_publishable_...">
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnTestSupabaseConn">Test Connection</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnSaveSupabaseConfig">Save & Connect</button>
+          </div>
+        </div>
+
+        <!-- Schema Setup Helper -->
+        <div class="add-manage-box" id="supabaseSchemaHelper">
+          <h4 class="add-box-title">Database Setup (One-time Step)</h4>
+          <p class="add-box-sub">If your tables are not created yet in Supabase, click below to copy the SQL script, then paste it in your <strong>Supabase Dashboard → SQL Editor</strong> and click <strong>Run</strong>.</p>
+          <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <button type="button" class="btn btn-gold btn-sm" id="btnCopySqlSchema">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Copy SQL Setup Script</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" id="btnManualSyncNow">
+              <span>Sync All to Cloud Now</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="text-subtle" style="font-size: 0.74rem;">Automatic cloud sync enabled</span>
+        <button type="button" class="btn btn-primary btn-sm" id="btnDoneSupabaseModal">Close</button>
       </div>
     </div>
   </div>

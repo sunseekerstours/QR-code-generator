@@ -1763,6 +1763,73 @@ body.app-body {
   color: var(--color-brand-gold);
 }
 
+/* Cloud Sync Status Badge & Modal */
+.cloud-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-brand-amber);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--color-brand-amber);
+  transition: all var(--transition-fast);
+}
+
+.cloud-dot.connected {
+  background: var(--accent-emerald);
+  box-shadow: 0 0 8px var(--accent-emerald);
+}
+
+.cloud-dot.error {
+  background: var(--accent-danger);
+  box-shadow: 0 0 8px var(--accent-danger);
+}
+
+.cloud-status-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-indicator-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-orb {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-brand-amber);
+  box-shadow: 0 0 8px var(--color-brand-amber);
+}
+
+.status-orb.connected {
+  background: var(--accent-emerald);
+  box-shadow: 0 0 10px var(--accent-emerald);
+}
+
+.status-orb.error {
+  background: var(--accent-danger);
+  box-shadow: 0 0 10px var(--accent-danger);
+}
+
+.status-title {
+  font-family: var(--font-heading);
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.status-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
 .manage-modal-dialog {
   max-width: 620px;
 }
