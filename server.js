@@ -15,6 +15,7 @@ if (!fs.existsSync(DATA_DIR)) {
 const LIBRARY_FILE = path.join(DATA_DIR, 'library.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const TYPES_FILE = path.join(DATA_DIR, 'datatypes.json');
+const DELETED_FILE = path.join(DATA_DIR, 'deleted.json');
 
 const SUPABASE_CONFIG = {
   url: 'https://quaggsbpiewmxcxceoyg.supabase.co',
@@ -74,6 +75,17 @@ function writeJson(filePath, data) {
 if (!fs.existsSync(LIBRARY_FILE)) writeJson(LIBRARY_FILE, DEFAULT_LIBRARY);
 if (!fs.existsSync(CATEGORIES_FILE)) writeJson(CATEGORIES_FILE, DEFAULT_CATEGORIES);
 if (!fs.existsSync(TYPES_FILE)) writeJson(TYPES_FILE, DEFAULT_DATA_TYPES);
+if (!fs.existsSync(DELETED_FILE)) writeJson(DELETED_FILE, []);
+
+// Durable tombstone registry: ids that were deleted and must never come back
+function upsertDeleted(id) {
+  if (!id) return;
+  const deleted = readJson(DELETED_FILE, []);
+  if (!deleted.includes(id)) {
+    deleted.push(id);
+    writeJson(DELETED_FILE, deleted);
+  }
+}
 
 // Supabase Async Background Synchronizer
 async function mirrorToSupabase(endpoint, method, payload = null) {
@@ -150,9 +162,10 @@ const server = http.createServer(async (req, res) => {
     const library = readJson(LIBRARY_FILE, DEFAULT_LIBRARY);
     const categories = readJson(CATEGORIES_FILE, DEFAULT_CATEGORIES);
     const dataTypes = readJson(TYPES_FILE, DEFAULT_DATA_TYPES);
+    const deleted = readJson(DELETED_FILE, []);
 
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
-    res.end(JSON.stringify({ library, categories, dataTypes }));
+    res.end(JSON.stringify({ library, categories, dataTypes, deleted }));
     return;
   }
 
@@ -163,6 +176,18 @@ const server = http.createServer(async (req, res) => {
     if (!item || !item.id) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Missing item or item.id' }));
+      return;
+    }
+
+    // A globally-deleted item must stay deleted. Suppress any re-save so it
+    // can never be resurrected by a stale client or a fresh browser.
+    if (readJson(DELETED_FILE, []).includes(item.id)) {
+      let library = readJson(LIBRARY_FILE, DEFAULT_LIBRARY);
+      library = library.filter(i => i.id !== item.id);
+      writeJson(LIBRARY_FILE, library);
+      mirrorToSupabase(`qr_codes?id=eq.${encodeURIComponent(item.id)}`, 'DELETE');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, tombstoned: true, item }));
       return;
     }
 
@@ -207,6 +232,9 @@ const server = http.createServer(async (req, res) => {
     let library = readJson(LIBRARY_FILE, DEFAULT_LIBRARY);
     library = library.filter(i => i.id !== id);
     writeJson(LIBRARY_FILE, library);
+
+    // Record durable tombstone so every client keeps it deleted forever
+    upsertDeleted(id);
 
     // Asynchronously mirror delete to Supabase
     mirrorToSupabase(`qr_codes?id=eq.${encodeURIComponent(id)}`, 'DELETE');

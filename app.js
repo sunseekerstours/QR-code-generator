@@ -252,6 +252,26 @@
   let qrCodeInstance = null;
   let updateDebounceTimeout = null;
   let autoPersistTimeout = null;
+  let deletedTombstones = new Set();
+
+  function loadTombstones() {
+    try {
+      const saved = localStorage.getItem(TOMBSTONES_STORAGE_KEY);
+      if (saved) {
+        deletedTombstones = new Set(JSON.parse(saved));
+      }
+    } catch (e) {
+      deletedTombstones = new Set();
+    }
+  }
+
+  function saveTombstones() {
+    try {
+      const arr = Array.from(deletedTombstones).slice(-200);
+      localStorage.setItem(TOMBSTONES_STORAGE_KEY, JSON.stringify(arr));
+    } catch (e) {}
+  }
+  loadTombstones();
 
   // --------------------------------------------------------------------------
   // DOM REFERENCES
@@ -446,6 +466,18 @@
       if (!res.ok) return;
       const data = await res.json();
       if (!data) return;
+
+      // Ingest tombstones from server so deleted items are permanently tracked
+      if (Array.isArray(data.deleted) && data.deleted.length > 0) {
+        let addedTombstone = false;
+        data.deleted.forEach(id => {
+          if (!deletedTombstones.has(id)) {
+            deletedTombstones.add(id);
+            addedTombstone = true;
+          }
+        });
+        if (addedTombstone) saveTombstones();
+      }
 
       let changed = false;
 
@@ -1159,25 +1191,6 @@
   // --------------------------------------------------------------------------
   // SUPABASE CLOUD SYNC & GLOBAL PERSISTENCE ENGINE
   // --------------------------------------------------------------------------
-  let deletedTombstones = new Set();
-
-  function loadTombstones() {
-    try {
-      const saved = localStorage.getItem(TOMBSTONES_STORAGE_KEY);
-      if (saved) {
-        deletedTombstones = new Set(JSON.parse(saved));
-      }
-    } catch (e) {
-      deletedTombstones = new Set();
-    }
-  }
-
-  function saveTombstones() {
-    try {
-      const arr = Array.from(deletedTombstones).slice(-200);
-      localStorage.setItem(TOMBSTONES_STORAGE_KEY, JSON.stringify(arr));
-    } catch (e) {}
-  }
 
   function loadSupabaseConfig() {
     try {
