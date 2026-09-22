@@ -73,32 +73,6 @@
     </div>
   </header>
 
-  <!-- Missing Cloud Setup Banner (Shown automatically if Supabase tables are not created yet) -->
-  <div class="cloud-notification-banner no-print" id="cloudNotificationBanner" style="display: none;">
-    <div class="banner-inner">
-      <div class="banner-left">
-        <span class="banner-pulse" id="bannerPulseDot"></span>
-        <div class="banner-text-group">
-          <strong id="bannerTitle">Supabase Cloud Setup Needed</strong>
-          <p id="bannerDesc">Database tables are not yet created in your Supabase project. Changes are currently saving only in local browser storage.</p>
-        </div>
-      </div>
-      <div class="banner-actions">
-        <button type="button" class="btn btn-gold btn-sm" id="btnBannerCopySql">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-          <span>Copy SQL Setup</span>
-        </button>
-        <a href="https://supabase.com/dashboard/project/quaggsbpiewmxcxceoyg/sql/new" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" id="btnBannerOpenEditor">
-          <span>Open SQL Editor ↗</span>
-        </a>
-        <button type="button" class="btn btn-secondary btn-sm" id="btnBannerCheckNow">Check Status</button>
-        <button type="button" class="btn-banner-dismiss" id="btnBannerDismiss" title="Dismiss banner">✕</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Notification Banner Toast -->
   <div class="toast-container" id="toastContainer"></div>

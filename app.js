@@ -414,14 +414,6 @@
     btnSupabaseSync: document.getElementById('btnSupabaseSync'),
     cloudStatusDot: document.getElementById('cloudStatusDot'),
     cloudStatusLabel: document.getElementById('cloudStatusLabel'),
-    cloudNotificationBanner: document.getElementById('cloudNotificationBanner'),
-    bannerPulseDot: document.getElementById('bannerPulseDot'),
-    bannerTitle: document.getElementById('bannerTitle'),
-    bannerDesc: document.getElementById('bannerDesc'),
-    btnBannerCopySql: document.getElementById('btnBannerCopySql'),
-    btnBannerOpenEditor: document.getElementById('btnBannerOpenEditor'),
-    btnBannerCheckNow: document.getElementById('btnBannerCheckNow'),
-    btnBannerDismiss: document.getElementById('btnBannerDismiss'),
     supabaseModalBackdrop: document.getElementById('supabaseModalBackdrop'),
     btnCloseSupabaseModal: document.getElementById('btnCloseSupabaseModal'),
     btnDoneSupabaseModal: document.getElementById('btnDoneSupabaseModal'),
@@ -438,12 +430,19 @@
     btnManualSyncNow: document.getElementById('btnManualSyncNow')
   };
 
+  function getApiBaseUrl() {
+    if (window.location.protocol === 'file:') {
+      return 'http://localhost:3005';
+    }
+    return '';
+  }
+
   // --------------------------------------------------------------------------
   // GLOBAL SERVER PERSISTENCE & SYNC (Multi-User Cross-Device)
   // --------------------------------------------------------------------------
   async function fetchGlobalServerData() {
     try {
-      const res = await fetch('/api/library');
+      const res = await fetch(`${getApiBaseUrl()}/api/library`);
       if (!res.ok) return;
       const data = await res.json();
       if (!data) return;
@@ -535,7 +534,7 @@
 
   async function saveToServer(item) {
     try {
-      await fetch('/api/library/save', {
+      await fetch(`${getApiBaseUrl()}/api/library/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item })
@@ -545,7 +544,7 @@
 
   async function deleteFromServer(id) {
     try {
-      await fetch('/api/library/delete', {
+      await fetch(`${getApiBaseUrl()}/api/library/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
@@ -555,7 +554,7 @@
 
   async function saveCategoryToServer(name) {
     try {
-      await fetch('/api/categories/save', {
+      await fetch(`${getApiBaseUrl()}/api/categories/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
@@ -565,7 +564,7 @@
 
   async function deleteCategoryFromServer(name) {
     try {
-      await fetch('/api/categories/delete', {
+      await fetch(`${getApiBaseUrl()}/api/categories/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
@@ -575,7 +574,7 @@
 
   async function saveDataTypeToServer(typeObj) {
     try {
-      await fetch('/api/datatypes/save', {
+      await fetch(`${getApiBaseUrl()}/api/datatypes/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: typeObj })
@@ -585,7 +584,7 @@
 
   async function deleteDataTypeFromServer(id) {
     try {
-      await fetch('/api/datatypes/delete', {
+      await fetch(`${getApiBaseUrl()}/api/datatypes/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
@@ -1243,22 +1242,8 @@
     if (elements.btnModalCopySql) {
       elements.btnModalCopySql.addEventListener('click', copySqlSchemaToClipboard);
     }
-    if (elements.btnBannerCopySql) {
-      elements.btnBannerCopySql.addEventListener('click', copySqlSchemaToClipboard);
-    }
-
     if (elements.btnManualSyncNow) {
       elements.btnManualSyncNow.addEventListener('click', () => syncAllWithCloud(true));
-    }
-    if (elements.btnBannerCheckNow) {
-      elements.btnBannerCheckNow.addEventListener('click', () => checkSupabaseHealth(true));
-    }
-    if (elements.btnBannerDismiss) {
-      elements.btnBannerDismiss.addEventListener('click', () => {
-        if (elements.cloudNotificationBanner) {
-          elements.cloudNotificationBanner.style.display = 'none';
-        }
-      });
     }
   }
 
@@ -1403,24 +1388,18 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       if (elements.modalStatusTitle) elements.modalStatusTitle.textContent = title;
       if (elements.modalStatusDesc) elements.modalStatusDesc.textContent = desc;
       if (elements.modalSchemaAlert) elements.modalSchemaAlert.style.display = 'none';
-      if (elements.cloudNotificationBanner) elements.cloudNotificationBanner.style.display = 'none';
     } else if (status === 'pending') {
       if (elements.cloudStatusDot) elements.cloudStatusDot.classList.add('warning');
       if (elements.modalStatusOrb) elements.modalStatusOrb.classList.add('warning');
-      if (elements.cloudStatusLabel) elements.cloudStatusLabel.textContent = 'Setup Required';
+      if (elements.cloudStatusLabel) elements.cloudStatusLabel.textContent = 'Supabase Cloud';
 
       if (elements.modalStatusTitle) elements.modalStatusTitle.textContent = title;
       if (elements.modalStatusDesc) elements.modalStatusDesc.textContent = desc;
       if (elements.modalSchemaAlert) elements.modalSchemaAlert.style.display = 'block';
-
-      if (elements.cloudNotificationBanner) {
-        elements.cloudNotificationBanner.style.display = 'block';
-        elements.cloudNotificationBanner.className = 'cloud-notification-banner';
-      }
     } else {
       if (elements.cloudStatusDot) elements.cloudStatusDot.classList.add('error');
       if (elements.modalStatusOrb) elements.modalStatusOrb.classList.add('error');
-      if (elements.cloudStatusLabel) elements.cloudStatusLabel.textContent = 'Cloud: Offline';
+      if (elements.cloudStatusLabel) elements.cloudStatusLabel.textContent = 'Supabase Cloud';
 
       if (elements.modalStatusTitle) elements.modalStatusTitle.textContent = title;
       if (elements.modalStatusDesc) elements.modalStatusDesc.textContent = desc;
@@ -1943,16 +1922,19 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
     elements.qrNameInput.addEventListener('input', (e) => {
       state.config.name = e.target.value.trim();
       updateLivePreviewText();
+      scheduleAutoPersist();
     });
 
     elements.qrSubtitleInput.addEventListener('input', (e) => {
       state.config.subtitle = e.target.value.trim();
       updateLivePreviewText();
+      scheduleAutoPersist();
     });
 
     elements.qrCategorySelect.addEventListener('change', (e) => {
       state.config.category = e.target.value;
       updateLivePreviewText();
+      scheduleAutoPersist();
     });
 
     // 2. Data Type Selection

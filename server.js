@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const PORT = process.env.PORT || 3005;
 const PUBLIC_DIR = __dirname;
@@ -408,6 +409,29 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Sunseekers QR Generator with Global Persistence running at http://localhost:${PORT}`);
+function getNetworkIp() {
+  const interfaces = os.networkInterfaces();
+  let candidate = null;
+  for (const ifaceName of Object.keys(interfaces)) {
+    // Skip virtual, WSL, and loopback adapters
+    const isVirtual = /vEthernet|WSL|Virtual|Hyper-V|Loopback/i.test(ifaceName);
+    for (const iface of interfaces[ifaceName]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        if (!isVirtual) {
+          return iface.address; // Preferred physical LAN/Wi-Fi
+        }
+        if (!candidate) candidate = iface.address;
+      }
+    }
+  }
+  return candidate || '127.0.0.1';
+}
+
+server.listen(PORT, '0.0.0.0', () => {
+  const ip = getNetworkIp();
+  console.log(`\n======================================================`);
+  console.log(`  Sunseekers QR Engine - Multi-Device Global Sync`);
+  console.log(`  💻 Laptop (Local):   http://localhost:${PORT}`);
+  console.log(`  📱 Phone (Network):  http://${ip}:${PORT}`);
+  console.log(`======================================================\n`);
 });
