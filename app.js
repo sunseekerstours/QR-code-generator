@@ -479,12 +479,8 @@
             localItem._synced = true;
             nextLibrary.push(localItem);
           } else {
-            if (localItem._synced) {
-              changed = true;
-            } else {
-              saveToServer(localItem);
-              nextLibrary.push(localItem);
-            }
+            // Item missing on server -> It was deleted elsewhere. Drop it locally so it stays deleted!
+            changed = true;
           }
         }
 
@@ -1467,93 +1463,66 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       const cloudMap = new Map();
       cloudCodes.forEach(c => cloudMap.set(c.id, c));
 
-      let updated = false;
-
-      // 1. RECONCILE LOCAL ITEMS AGAINST CLOUD:
-      // If a local item was already synced (or in tombstones) and is now missing in cloud,
-      // another user deleted it! Remove it locally so deletions are global across all clients.
-      // If a local item has _synced === false (created offline), push it to Supabase now!
-      const retainedLibrary = [];
-      for (const localItem of state.library) {
-        if (deletedTombstones.has(localItem.id)) {
-          // Explicitly deleted by this user; ensure deleted on remote as well
-          if (cloudMap.has(localItem.id)) {
-            await deleteSingleQRCodeFromSupabase(localItem.id, false);
-          }
-          updated = true;
-          continue; // Drop from library
+      // 1. Purge any tombstoned items that still linger in the cloud
+      for (const tombstoneId of deletedTombstones) {
+        if (cloudMap.has(tombstoneId)) {
+          await deleteSingleQRCodeFromSupabase(tombstoneId, false);
         }
+      }
 
-        if (cloudMap.has(localItem.id)) {
-          const remote = cloudMap.get(localItem.id);
-          const remoteUpdated = remote.updated_at || remote.created_at;
+      // 2. The Supabase cloud database is the single source of truth.
+      // Filter out tombstoned items and construct active library
+      const activeCloudItems = cloudCodes
+        .filter(remote => !deletedTombstones.has(remote.id))
+        .map(remote => ({
+          id: remote.id,
+          name: remote.name,
+          category: remote.category || 'Fleet & Buses',
+          url: remote.url,
+          subtitle: remote.subtitle || '',
+          createdAt: remote.created_at,
+          updatedAt: remote.updated_at || remote.created_at,
+          configSnapshot: remote.config_snapshot || {},
+          _synced: true
+        }));
 
-          // Check if remote data differs from local
-          const localSnapStr = JSON.stringify(localItem.configSnapshot || {});
-          const remoteSnapStr = JSON.stringify(remote.config_snapshot || {});
+      // Sort newest first
+      activeCloudItems.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
+      // Reconcile with local library state
+      let hasChanges = activeCloudItems.length !== state.library.length;
+      if (!hasChanges) {
+        for (let i = 0; i < activeCloudItems.length; i++) {
+          const remote = activeCloudItems[i];
+          const local = state.library[i];
           if (
-            localItem.name !== remote.name ||
-            localItem.category !== remote.category ||
-            localItem.url !== remote.url ||
-            localItem.subtitle !== (remote.subtitle || '') ||
-            localSnapStr !== remoteSnapStr
+            !local ||
+            local.id !== remote.id ||
+            local.name !== remote.name ||
+            local.category !== remote.category ||
+            local.url !== remote.url ||
+            local.subtitle !== remote.subtitle ||
+            local.updatedAt !== remote.updatedAt ||
+            JSON.stringify(local.configSnapshot || {}) !== JSON.stringify(remote.configSnapshot || {})
           ) {
-            localItem.name = remote.name;
-            localItem.category = remote.category || 'Fleet & Buses';
-            localItem.url = remote.url;
-            localItem.subtitle = remote.subtitle || '';
-            localItem.configSnapshot = remote.config_snapshot || {};
-            localItem.updatedAt = remoteUpdated;
-            updated = true;
-
-            // If active in studio, live-update studio controls and preview
-            if (state.currentWorkingId === localItem.id) {
-              loadItemIntoStudio(localItem);
-            }
-          }
-          localItem._synced = true;
-          retainedLibrary.push(localItem);
-        } else {
-          // Item missing in Supabase
-          if (localItem._synced) {
-            // Previously synced, now gone -> Deleted by another user or session!
-            updated = true;
-            // Drop it so deletion reflects across all users!
-          } else {
-            // Created while offline, push it to Supabase now!
-            await syncSingleQRCodeToSupabase(localItem);
-            retainedLibrary.push(localItem);
+            hasChanges = true;
+            break;
           }
         }
       }
 
-      // 2. ADD NEW ITEMS CREATED BY OTHER USERS:
-      const currentLocalIds = new Set(retainedLibrary.map(i => i.id));
-      for (const remote of cloudCodes) {
-        if (!currentLocalIds.has(remote.id) && !deletedTombstones.has(remote.id)) {
-          retainedLibrary.push({
-            id: remote.id,
-            name: remote.name,
-            category: remote.category || 'Fleet & Buses',
-            url: remote.url,
-            subtitle: remote.subtitle || '',
-            createdAt: remote.created_at,
-            updatedAt: remote.updated_at || remote.created_at,
-            configSnapshot: remote.config_snapshot || {},
-            _synced: true
-          });
-          updated = true;
-        }
-      }
-
-      // Keep newest first
-      retainedLibrary.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-      if (updated || retainedLibrary.length !== state.library.length) {
-        state.library = retainedLibrary;
+      if (hasChanges) {
+        state.library = activeCloudItems;
         saveLibraryToStorage();
         renderLibrary();
+
+        // If current studio item was updated remotely, reload it into studio
+        if (state.currentWorkingId) {
+          const currentRemote = activeCloudItems.find(i => i.id === state.currentWorkingId);
+          if (currentRemote) {
+            loadItemIntoStudio(currentRemote);
+          }
+        }
       }
     } catch (e) {
       console.warn('Error fetching cloud codes:', e);
