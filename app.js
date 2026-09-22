@@ -1566,11 +1566,11 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
         saveLibraryToStorage();
         renderLibrary();
 
-        // If current studio item was updated remotely, reload it into studio
+        // If current studio item was updated remotely, reload it into studio silently in the background
         if (state.currentWorkingId) {
           const currentRemote = activeCloudItems.find(i => i.id === state.currentWorkingId);
           if (currentRemote) {
-            loadItemIntoStudio(currentRemote);
+            loadItemIntoStudio(currentRemote, false);
           }
         }
       }
@@ -2618,7 +2618,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
       // Action Listeners
       card.querySelector('.btn-lib-edit').addEventListener('click', () => {
-        loadItemIntoStudio(item);
+        loadItemIntoStudio(item, true);
       });
 
       card.querySelector('.btn-lib-dl').addEventListener('click', async () => {
@@ -2704,7 +2704,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
     };
   }
 
-  function loadItemIntoStudio(item) {
+  function loadItemIntoStudio(item, switchTab = false) {
     state.currentWorkingId = item.id;
 
     if (item.configSnapshot) {
@@ -2788,10 +2788,11 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       switchDataType('url');
     }
 
-    // Switch to Studio tab
-    elements.tabBtnStudio.click();
+    // Switch to Studio tab if explicitly requested (e.g. from clicking Edit)
+    if (switchTab && elements.tabBtnStudio) {
+      elements.tabBtnStudio.click();
+    }
     requestQRUpdate();
-    showToast(`Loaded "${item.name}" into Studio Creator`, 'success');
   }
 
   function handleExportLibraryJson() {
