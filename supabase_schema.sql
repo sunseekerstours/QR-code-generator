@@ -14,8 +14,22 @@ CREATE TABLE IF NOT EXISTS public.qr_codes (
     url TEXT NOT NULL,
     subtitle TEXT,
     config_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Ensure updated_at column exists if table was previously created without it
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'qr_codes' 
+        AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE public.qr_codes ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+    END IF;
+END $$;
 
 -- 3. Create Categories Table
 CREATE TABLE IF NOT EXISTS public.qr_categories (
@@ -62,7 +76,7 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. Row Level Security (RLS) Policies
--- Enables public read/write access using Supabase anon key for your app
+-- Enables public read/write access using Supabase publishable/anon key for your app
 ALTER TABLE public.qr_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.qr_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.qr_data_types ENABLE ROW LEVEL SECURITY;
@@ -76,3 +90,14 @@ CREATE POLICY "Allow anon all on qr_categories" ON public.qr_categories FOR ALL 
 
 DROP POLICY IF EXISTS "Allow anon all on qr_data_types" ON public.qr_data_types;
 CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL USING (true) WITH CHECK (true);
+
+-- 8. Enable Realtime Replication (optional but recommended for instant live sync)
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.qr_codes;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.qr_categories;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.qr_data_types;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+    WHEN undefined_object THEN NULL;
+END $$;

@@ -54,6 +54,13 @@
       </nav>
 
       <div class="header-actions">
+        <button type="button" class="btn btn-secondary btn-sm" id="btnSupabaseSync" title="Supabase Cloud Database Settings">
+          <span class="cloud-dot warning" id="cloudStatusDot"></span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+          </svg>
+          <span id="cloudStatusLabel">Supabase Cloud</span>
+        </button>
         <button type="button" class="btn btn-secondary btn-sm" id="btnQuickPrintSheet">
           <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 6 2 18 2 18 9"/>
@@ -66,7 +73,32 @@
     </div>
   </header>
 
-
+  <!-- Missing Cloud Setup Banner (Shown automatically if Supabase tables are not created yet) -->
+  <div class="cloud-notification-banner no-print" id="cloudNotificationBanner" style="display: none;">
+    <div class="banner-inner">
+      <div class="banner-left">
+        <span class="banner-pulse" id="bannerPulseDot"></span>
+        <div class="banner-text-group">
+          <strong id="bannerTitle">Supabase Cloud Setup Needed</strong>
+          <p id="bannerDesc">Database tables are not yet created in your Supabase project. Changes are currently saving only in local browser storage.</p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button type="button" class="btn btn-gold btn-sm" id="btnBannerCopySql">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <span>Copy SQL Setup</span>
+        </button>
+        <a href="https://supabase.com/dashboard/project/quaggsbpiewmxcxceoyg/sql/new" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" id="btnBannerOpenEditor">
+          <span>Open SQL Editor ↗</span>
+        </a>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnBannerCheckNow">Check Status</button>
+        <button type="button" class="btn-banner-dismiss" id="btnBannerDismiss" title="Dismiss banner">✕</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Notification Banner Toast -->
   <div class="toast-container" id="toastContainer"></div>
@@ -902,6 +934,103 @@
   </div>
 
 
+
+  <!-- ============================================== -->
+  <!-- MODAL: SUPABASE CLOUD SYNC DIALOG              -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="supabaseModalBackdrop" style="display:none;">
+    <div class="modal-dialog manage-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <h3 class="modal-title">Supabase Cloud Database Sync</h3>
+          <p class="modal-desc">Real-time global persistence for QR codes, custom categories, and data types.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseSupabaseModal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Cloud Status Card -->
+        <div class="cloud-status-box" id="cloudStatusBox">
+          <div class="status-indicator-row">
+            <span class="status-orb warning" id="modalStatusOrb"></span>
+            <span class="status-title" id="modalStatusTitle">Checking Cloud Status...</span>
+          </div>
+          <p class="status-desc" id="modalStatusDesc">Connecting to your Supabase PostgreSQL cluster...</p>
+        </div>
+
+        <!-- Missing Schema Action Box (Shown when tables 404) -->
+        <div class="cloud-alert-banner" id="modalSchemaAlert" style="display: none;">
+          <div class="cloud-alert-title">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>One-Time Database Setup Required</span>
+          </div>
+          <p class="cloud-alert-body">
+            Your Supabase project is active, but the tables (<code>qr_codes</code>, <code>qr_categories</code>, <code>qr_data_types</code>) need to be created so all changes save globally.
+          </p>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+            <button type="button" class="btn btn-gold btn-sm" id="btnModalCopySql">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Copy SQL Setup Script</span>
+            </button>
+            <a href="https://supabase.com/dashboard/project/quaggsbpiewmxcxceoyg/sql/new" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+              <span>Open Supabase SQL Editor ↗</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Connection Settings -->
+        <div class="add-manage-box">
+          <h4 class="add-box-title">Project Credentials</h4>
+          <p class="add-box-sub">Your Supabase project URL and public publishable / anon API key.</p>
+          <div class="form-group" style="margin-top: 10px;">
+            <label class="form-label" for="supabaseUrlInput">Project URL</label>
+            <input type="text" id="supabaseUrlInput" class="form-input" value="https://quaggsbpiewmxcxceoyg.supabase.co" placeholder="https://your-project.supabase.co">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="supabaseKeyInput">Publishable / Anon Key</label>
+            <input type="text" id="supabaseKeyInput" class="form-input" value="sb_publishable_4SXazBJJ4GlEWrDsq7yt4A_XT67YuoW" placeholder="sb_publishable_...">
+          </div>
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm" id="btnTestSupabaseConn">Test Connection</button>
+            <button type="button" class="btn btn-primary btn-sm" id="btnSaveSupabaseConfig">Save & Re-Connect</button>
+          </div>
+        </div>
+
+        <!-- Schema Setup Manual Helper -->
+        <div class="add-manage-box">
+          <h4 class="add-box-title">Sync Control</h4>
+          <p class="add-box-sub">Force an immediate two-way synchronization between this browser and Supabase.</p>
+          <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <button type="button" class="btn btn-gold btn-sm" id="btnCopySqlSchema">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Copy SQL Setup Script</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnManualSyncNow">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              <span>Sync All to Cloud Now</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="text-subtle" style="font-size: 0.74rem;">Global sync active across all devices</span>
+        <button type="button" class="btn btn-primary btn-sm" id="btnDoneSupabaseModal">Done</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="app-footer no-print">
     <div class="footer-container">

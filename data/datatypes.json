@@ -1,0 +1,74 @@
+[
+  {
+    "id": "url",
+    "name": "Website / Link (URL)",
+    "prefix": "",
+    "placeholder": "https://sunseekers.co.za/book",
+    "hint": "Validates destination website address automatically",
+    "isBuiltin": true
+  },
+  {
+    "id": "wifi",
+    "name": "Bus Wi-Fi Connect",
+    "prefix": "WIFI:",
+    "placeholder": "",
+    "hint": "Instant connect to coach onboard Wi-Fi hotspot",
+    "isBuiltin": true
+  },
+  {
+    "id": "whatsapp",
+    "name": "WhatsApp Booking Line",
+    "prefix": "https://wa.me/",
+    "placeholder": "+27821234567",
+    "hint": "Direct WhatsApp chat with customer dispatch",
+    "isBuiltin": true
+  },
+  {
+    "id": "vcard",
+    "name": "Business Contact (vCard)",
+    "prefix": "BEGIN:VCARD",
+    "placeholder": "",
+    "hint": "Instant contact save to passenger phone address book",
+    "isBuiltin": true
+  },
+  {
+    "id": "text",
+    "name": "Plain Text / Note",
+    "prefix": "",
+    "placeholder": "Custom text or code",
+    "hint": "Displays plain text or reference code when scanned",
+    "isBuiltin": true
+  },
+  {
+    "id": "phone",
+    "name": "Direct Phone Call",
+    "prefix": "tel:",
+    "placeholder": "+27 11 555 0199",
+    "hint": "Prompts phone dialer to call dispatch desk directly",
+    "isBuiltin": false
+  },
+  {
+    "id": "email",
+    "name": "Email Dispatch",
+    "prefix": "mailto:",
+    "placeholder": "info@sunseekers.co.za",
+    "hint": "Opens email client with pre-addressed email",
+    "isBuiltin": false
+  },
+  {
+    "id": "sms",
+    "name": "SMS Text Message",
+    "prefix": "SMSTO:",
+    "placeholder": "+27821234567",
+    "hint": "Opens SMS messenger with pre-filled number",
+    "isBuiltin": false
+  },
+  {
+    "id": "maps",
+    "name": "Google Maps Location",
+    "prefix": "https://maps.google.com/?q=",
+    "placeholder": "Sunseekers Terminal, Cape Town",
+    "hint": "Opens Google Maps navigation directly to terminal",
+    "isBuiltin": false
+  }
+]

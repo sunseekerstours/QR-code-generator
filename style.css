@@ -1847,4 +1847,211 @@ body.app-body {
   }
 }
 
+/* --------------------------------------------------------------------------
+   CLOUD SYNC STATUS, BADGE & MODAL
+   -------------------------------------------------------------------------- */
+.cloud-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-brand-amber);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--color-brand-amber);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.cloud-dot.connected {
+  background: var(--accent-emerald, #10B981);
+  box-shadow: 0 0 8px var(--accent-emerald, #10B981);
+}
+
+.cloud-dot.warning {
+  background: var(--color-brand-amber, #F57C00);
+  box-shadow: 0 0 8px var(--color-brand-amber, #F57C00);
+  animation: pulse-ring 1.8s infinite;
+}
+
+.cloud-dot.error {
+  background: var(--accent-danger, #EF4444);
+  box-shadow: 0 0 8px var(--accent-danger, #EF4444);
+}
+
+.cloud-status-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-indicator-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-orb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-brand-amber);
+  box-shadow: 0 0 8px var(--color-brand-amber);
+  flex-shrink: 0;
+}
+
+.status-orb.connected {
+  background: var(--accent-emerald, #10B981);
+  box-shadow: 0 0 10px var(--accent-emerald, #10B981);
+}
+
+.status-orb.warning {
+  background: var(--color-brand-amber, #F57C00);
+  box-shadow: 0 0 10px var(--color-brand-amber, #F57C00);
+  animation: pulse-ring 1.8s infinite;
+}
+
+.status-orb.error {
+  background: var(--accent-danger, #EF4444);
+  box-shadow: 0 0 10px var(--accent-danger, #EF4444);
+}
+
+.status-title {
+  font-family: var(--font-heading);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.status-desc {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.cloud-alert-banner {
+  background: rgba(245, 124, 0, 0.12);
+  border: 1px solid rgba(245, 124, 0, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cloud-alert-banner.connected {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.cloud-alert-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--color-brand-gold, #FFB300);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cloud-alert-title.connected {
+  color: var(--accent-emerald, #10B981);
+}
+
+.cloud-alert-body {
+  font-size: 0.80rem;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+/* Notification Top Banner for Missing Schema */
+.cloud-notification-banner {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(245, 124, 0, 0.4);
+  backdrop-filter: blur(14px);
+  padding: 10px 24px;
+  position: relative;
+  z-index: 50;
+  transition: all 0.3s ease;
+}
+
+.cloud-notification-banner.ready {
+  border-bottom-color: rgba(16, 185, 129, 0.4);
+  background: rgba(6, 78, 59, 0.3);
+}
+
+.banner-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-brand-amber);
+  box-shadow: 0 0 10px var(--color-brand-amber);
+  flex-shrink: 0;
+  animation: pulse-ring 1.8s infinite;
+}
+
+.banner-pulse.connected {
+  background: var(--accent-emerald, #10B981);
+  box-shadow: 0 0 10px var(--accent-emerald, #10B981);
+  animation: none;
+}
+
+.banner-text-group strong {
+  display: block;
+  font-size: 0.85rem;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.banner-text-group p {
+  font-size: 0.77rem;
+  color: var(--text-muted);
+  margin: 2px 0 0 0;
+}
+
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-xs);
+  line-height: 1;
+  transition: var(--transition-fast);
+}
+
+.btn-banner-dismiss:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.manage-modal-dialog {
+  max-width: 640px;
+}
+
 
