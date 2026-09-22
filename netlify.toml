@@ -1,0 +1,27 @@
+[build]
+  publish = "."
+  command = "echo 'Deploying static site to Netlify'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+
+# Ensure JS and CSS are revalidated so code updates appear instantly
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Cache static images and fonts
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
