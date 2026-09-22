@@ -1,1 +1,41 @@
-[]
+[
+  {
+    "id": "sun_1790089511605_8ahmz",
+    "name": "Sunseekers Express Booking",
+    "category": "tour",
+    "url": "https://sunseekers.co.za/book-tickets",
+    "subtitle": "Point camera to view timetable & book seats",
+    "createdAt": "2026-09-22T15:05:11.605Z",
+    "updatedAt": "2026-09-22T15:05:28.980Z",
+    "configSnapshot": {
+      "name": "Sunseekers Express Booking",
+      "category": "tour",
+      "type": "url",
+      "subtitle": "Point camera to view timetable & book seats",
+      "rawUrl": "https://sunseekers.co.za/book-tickets",
+      "computedData": "https://sunseekers.co.za/book-tickets",
+      "dotsType": "rounded",
+      "cornersSquareType": "extra-rounded",
+      "cornersDotType": "dot",
+      "colorMode": "linear",
+      "gradientAngle": 45,
+      "primaryColor": "#F57C00",
+      "secondaryColor": "#D84315",
+      "bgColor": "#FFFFFF",
+      "transparentBg": false,
+      "customEyeColors": true,
+      "eyeFrameColor": "#BF360C",
+      "eyeDotColor": "#F57C00",
+      "logoSrc": "assets/sunseekers-logo.svg",
+      "logoSize": 0.3,
+      "logoMargin": 3,
+      "hideBackgroundDots": true,
+      "frameStyle": "bottom-banner",
+      "frameText": "SCAN TO BOOK",
+      "frameBgColor": "#F57C00",
+      "frameTextColor": "#FFFFFF",
+      "exportSize": 1200
+    },
+    "_synced": true
+  }
+]
