@@ -621,10 +621,12 @@
     fetchGlobalServerData();
     checkSupabaseHealth(false);
 
-    // Fast 3-second background polling for multi-user instant updates
+    // Fast 3-second background polling for multi-user instant updates across all data
     setInterval(() => {
       fetchGlobalServerData();
       if (state.supabase.connected && state.supabase.tablesReady) {
+        fetchCloudCategories();
+        fetchCloudDataTypes();
         fetchCloudQRCodes();
       } else {
         checkSupabaseHealth(false);
@@ -634,12 +636,24 @@
     // Immediate sync when tab gains focus or visibility
     window.addEventListener('focus', () => {
       fetchGlobalServerData();
-      checkSupabaseHealth(false);
+      if (state.supabase.connected && state.supabase.tablesReady) {
+        fetchCloudCategories();
+        fetchCloudDataTypes();
+        fetchCloudQRCodes();
+      } else {
+        checkSupabaseHealth(false);
+      }
     });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         fetchGlobalServerData();
-        checkSupabaseHealth(false);
+        if (state.supabase.connected && state.supabase.tablesReady) {
+          fetchCloudCategories();
+          fetchCloudDataTypes();
+          fetchCloudQRCodes();
+        } else {
+          checkSupabaseHealth(false);
+        }
       }
     });
   }
@@ -1492,6 +1506,11 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
             localItem.configSnapshot = remote.config_snapshot || {};
             localItem.updatedAt = remoteUpdated;
             updated = true;
+
+            // If active in studio, live-update studio controls and preview
+            if (state.currentWorkingId === localItem.id) {
+              loadItemIntoStudio(localItem);
+            }
           }
           localItem._synced = true;
           retainedLibrary.push(localItem);
@@ -1617,12 +1636,15 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       if (res.ok) {
         const cloudCats = await res.json();
         if (Array.isArray(cloudCats) && cloudCats.length > 0) {
-          const names = cloudCats.map(c => c.name).filter(Boolean);
-          const combined = Array.from(new Set([...state.categories, ...names]));
-          state.categories = combined;
-          saveCategoriesToStorage();
-          renderCategoryDropdowns();
-          renderCategoryManageList();
+          const names = cloudCats.map(c => (c.name || '').trim()).filter(Boolean);
+          const isDifferent = names.length !== state.categories.length ||
+            names.some((n, idx) => n !== state.categories[idx]);
+          if (isDifferent) {
+            state.categories = names;
+            saveCategoriesToStorage();
+            renderCategoryDropdowns();
+            renderCategoryManageList();
+          }
         } else if (Array.isArray(cloudCats) && cloudCats.length === 0) {
           for (const cat of state.categories) {
             await syncCategoryToSupabase(cat);
@@ -1645,7 +1667,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
           'Content-Type': 'application/json',
           'Prefer': 'resolution=ignore-duplicates'
         },
-        body: JSON.stringify({ name: catName })
+        body: JSON.stringify({ name: catName.trim() })
       });
     } catch (e) {
       console.warn('Cloud sync error for category:', e);
@@ -1655,7 +1677,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
   async function deleteCategoryFromSupabase(catName) {
     if (!state.supabase.connected || !state.supabase.tablesReady || !catName) return;
     try {
-      await fetch(`${state.supabase.url}/rest/v1/qr_categories?name=eq.${encodeURIComponent(catName)}`, {
+      await fetch(`${state.supabase.url}/rest/v1/qr_categories?name=eq.${encodeURIComponent(catName.trim())}`, {
         method: 'DELETE',
         headers: {
           'apikey': state.supabase.key,
@@ -1691,16 +1713,13 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
             isBuiltin: !!ct.is_builtin
           }));
 
-          const localIds = new Set(state.dataTypes.map(t => t.id));
-          remoteMapped.forEach(rmt => {
-            if (!localIds.has(rmt.id)) {
-              state.dataTypes.push(rmt);
-            }
-          });
-
-          saveTypesToStorage();
-          renderTypeDropdown();
-          renderTypeManageList();
+          const isDifferent = JSON.stringify(remoteMapped) !== JSON.stringify(state.dataTypes);
+          if (isDifferent) {
+            state.dataTypes = remoteMapped;
+            saveTypesToStorage();
+            renderTypeDropdown();
+            renderTypeManageList();
+          }
         } else if (Array.isArray(cloudTypes) && cloudTypes.length === 0) {
           for (const dt of state.dataTypes) {
             await syncDataTypeToSupabase(dt);
