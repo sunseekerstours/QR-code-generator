@@ -44,77 +44,7 @@ const DEFAULT_DATA_TYPES = [
   { id: 'maps', name: 'Google Maps Location', prefix: 'https://maps.google.com/?q=', placeholder: 'Sunseekers Terminal, Cape Town', hint: 'Opens Google Maps navigation directly to terminal', isBuiltin: false }
 ];
 
-const DEFAULT_LIBRARY = [
-  {
-    id: 'sun_init_1',
-    name: 'Sunseekers Express - Ticket Booking',
-    category: 'Tickets & Booking',
-    url: 'https://sunseekers.co.za/book-tickets',
-    subtitle: 'Direct online seat reservation & check-in',
-    createdAt: '2026-09-20T10:00:00.000Z',
-    updatedAt: '2026-09-20T10:00:00.000Z',
-    configSnapshot: {
-      name: 'Sunseekers Express - Ticket Booking',
-      category: 'Tickets & Booking',
-      subtitle: 'Direct online seat reservation & check-in',
-      rawUrl: 'https://sunseekers.co.za/book-tickets',
-      computedData: 'https://sunseekers.co.za/book-tickets',
-      type: 'url',
-      primaryColor: '#F57C00',
-      secondaryColor: '#FFB300',
-      dotsType: 'rounded',
-      cornersSquareType: 'extra-rounded',
-      cornersDotType: 'dot',
-      colorMode: 'linear'
-    }
-  },
-  {
-    id: 'sun_init_2',
-    name: 'Fleet Luxury Coach #101 - Wi-Fi',
-    category: 'Passenger Wi-Fi',
-    url: 'WIFI:T:WPA;S:Sunseekers-Fleet-101;P:SeekTheSun2026;;',
-    subtitle: 'Connect to free onboard high-speed Wi-Fi',
-    createdAt: '2026-09-20T10:05:00.000Z',
-    updatedAt: '2026-09-20T10:05:00.000Z',
-    configSnapshot: {
-      name: 'Fleet Luxury Coach #101 - Wi-Fi',
-      category: 'Passenger Wi-Fi',
-      subtitle: 'Connect to free onboard high-speed Wi-Fi',
-      rawUrl: 'WIFI:T:WPA;S:Sunseekers-Fleet-101;P:SeekTheSun2026;;',
-      computedData: 'WIFI:T:WPA;S:Sunseekers-Fleet-101;P:SeekTheSun2026;;',
-      type: 'wifi',
-      primaryColor: '#0284C7',
-      secondaryColor: '#0369A1',
-      dotsType: 'dots',
-      cornersSquareType: 'extra-rounded',
-      cornersDotType: 'dot',
-      colorMode: 'solid'
-    }
-  },
-  {
-    id: 'sun_init_3',
-    name: 'Sunseekers Passenger Care Desk',
-    category: 'Customer Feedback',
-    url: 'https://wa.me/27821234567?text=Hello%20Sunseekers',
-    subtitle: 'WhatsApp 24/7 passenger assistance & dispatch',
-    createdAt: '2026-09-20T10:10:00.000Z',
-    updatedAt: '2026-09-20T10:10:00.000Z',
-    configSnapshot: {
-      name: 'Sunseekers Passenger Care Desk',
-      category: 'Customer Feedback',
-      subtitle: 'WhatsApp 24/7 passenger assistance & dispatch',
-      rawUrl: 'https://wa.me/27821234567?text=Hello%20Sunseekers',
-      computedData: 'https://wa.me/27821234567?text=Hello%20Sunseekers',
-      type: 'whatsapp',
-      primaryColor: '#059669',
-      secondaryColor: '#064E3B',
-      dotsType: 'classy-rounded',
-      cornersSquareType: 'extra-rounded',
-      cornersDotType: 'dot',
-      colorMode: 'solid'
-    }
-  }
-];
+const DEFAULT_LIBRARY = [];
 
 // Helper to read JSON file safely
 function readJson(filePath, defaultValue) {

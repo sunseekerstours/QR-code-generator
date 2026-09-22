@@ -9,11 +9,11 @@
   // --------------------------------------------------------------------------
   // CONSTANTS & STARTER DATA
   // --------------------------------------------------------------------------
-  const STORAGE_KEY = 'sunseekers_qr_library_v1';
+  const STORAGE_KEY = 'sunseekers_qr_library_v2';
   const CATEGORIES_STORAGE_KEY = 'sunseekers_categories_v1';
   const TYPES_STORAGE_KEY = 'sunseekers_datatypes_v1';
   const SUPABASE_STORAGE_KEY = 'sunseekers_supabase_v1';
-  const TOMBSTONES_STORAGE_KEY = 'sunseekers_qr_tombstones_v1';
+  const TOMBSTONES_STORAGE_KEY = 'sunseekers_qr_tombstones_v2';
 
   const DEFAULT_SUPABASE_CONFIG = {
     url: 'https://quaggsbpiewmxcxceoyg.supabase.co',
@@ -2386,36 +2386,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       if (saved) {
         state.library = JSON.parse(saved);
       } else {
-        // Pre-populate with starter Sunseekers items
-        state.library = [
-          {
-            id: 'sun_init_1',
-            name: 'Sunseekers Express - Ticket Booking',
-            category: 'Tickets & Booking',
-            url: 'https://sunseekers.co.za/book-tickets',
-            subtitle: 'Direct online seat reservation & check-in',
-            createdAt: new Date().toISOString(),
-            configSnapshot: JSON.parse(JSON.stringify(state.config))
-          },
-          {
-            id: 'sun_init_2',
-            name: 'Fleet Luxury Coach #101 - Wi-Fi',
-            category: 'Passenger Wi-Fi',
-            url: 'WIFI:T:WPA;S:Sunseekers-Fleet-101;P:SeekTheSun2026;;',
-            subtitle: 'Connect to free onboard high-speed Wi-Fi',
-            createdAt: new Date().toISOString(),
-            configSnapshot: { ...state.config, primaryColor: '#0284C7', secondaryColor: '#0369A1' }
-          },
-          {
-            id: 'sun_init_3',
-            name: 'Sunseekers Passenger Care Desk',
-            category: 'Customer Feedback',
-            url: 'https://wa.me/27821234567?text=Hello%20Sunseekers',
-            subtitle: 'WhatsApp 24/7 passenger assistance & dispatch',
-            createdAt: new Date().toISOString(),
-            configSnapshot: { ...state.config, primaryColor: '#059669', secondaryColor: '#064E3B' }
-          }
-        ];
+        state.library = [];
         saveLibraryToStorage();
       }
     } catch (err) {
