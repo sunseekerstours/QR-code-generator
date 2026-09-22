@@ -21,13 +21,11 @@
   };
 
   const DEFAULT_CATEGORIES = [
-    'Fleet & Buses',
+    'Tours',
     'Tickets & Booking',
     'Passenger Wi-Fi',
-    'Customer Feedback',
     'VIP Lounges',
-    'Social & Marketing',
-    'Operations'
+    'Social & Marketing'
   ];
 
   const DEFAULT_DATA_TYPES = [
@@ -252,23 +250,36 @@
   let qrCodeInstance = null;
   let updateDebounceTimeout = null;
   let autoPersistTimeout = null;
-  let deletedTombstones = new Set();
+  let deletedTombstones = {
+    codes: new Set(['sun_1790089511605_8ahmz']),
+    categories: new Set(['Fleet & Buses', 'Customer Feedback', 'Operations', 'tour']),
+    dataTypes: new Set()
+  };
 
   function loadTombstones() {
     try {
       const saved = localStorage.getItem(TOMBSTONES_STORAGE_KEY);
       if (saved) {
-        deletedTombstones = new Set(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(id => deletedTombstones.codes.add(id));
+        } else if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.codes)) parsed.codes.forEach(id => deletedTombstones.codes.add(id));
+          if (Array.isArray(parsed.categories)) parsed.categories.forEach(c => deletedTombstones.categories.add(c));
+          if (Array.isArray(parsed.dataTypes)) parsed.dataTypes.forEach(dt => deletedTombstones.dataTypes.add(dt));
+        }
       }
-    } catch (e) {
-      deletedTombstones = new Set();
-    }
+    } catch (e) {}
   }
 
   function saveTombstones() {
     try {
-      const arr = Array.from(deletedTombstones).slice(-200);
-      localStorage.setItem(TOMBSTONES_STORAGE_KEY, JSON.stringify(arr));
+      const payload = {
+        codes: Array.from(deletedTombstones.codes).slice(-200),
+        categories: Array.from(deletedTombstones.categories).slice(-100),
+        dataTypes: Array.from(deletedTombstones.dataTypes).slice(-100)
+      };
+      localStorage.setItem(TOMBSTONES_STORAGE_KEY, JSON.stringify(payload));
     } catch (e) {}
   }
   loadTombstones();
@@ -468,15 +479,31 @@
       if (!data) return;
 
       // Ingest tombstones from server so deleted items are permanently tracked
-      if (Array.isArray(data.deleted) && data.deleted.length > 0) {
-        let addedTombstone = false;
-        data.deleted.forEach(id => {
-          if (!deletedTombstones.has(id)) {
-            deletedTombstones.add(id);
-            addedTombstone = true;
+      if (data.deleted) {
+        let changedTombstones = false;
+        const sCodes = Array.isArray(data.deleted) ? data.deleted : (data.deleted.codes || []);
+        const sCategories = data.deleted.categories || [];
+        const sDataTypes = data.deleted.dataTypes || [];
+
+        sCodes.forEach(id => {
+          if (!deletedTombstones.codes.has(id)) {
+            deletedTombstones.codes.add(id);
+            changedTombstones = true;
           }
         });
-        if (addedTombstone) saveTombstones();
+        sCategories.forEach(cat => {
+          if (!deletedTombstones.categories.has(cat)) {
+            deletedTombstones.categories.add(cat);
+            changedTombstones = true;
+          }
+        });
+        sDataTypes.forEach(dt => {
+          if (!deletedTombstones.dataTypes.has(dt)) {
+            deletedTombstones.dataTypes.add(dt);
+            changedTombstones = true;
+          }
+        });
+        if (changedTombstones) saveTombstones();
       }
 
       let changed = false;
@@ -488,7 +515,7 @@
 
         const nextLibrary = [];
         for (const localItem of state.library) {
-          if (deletedTombstones.has(localItem.id)) {
+          if (deletedTombstones.codes.has(localItem.id)) {
             if (serverMap.has(localItem.id)) {
               deleteFromServer(localItem.id);
             }
@@ -518,7 +545,7 @@
 
         const localIds = new Set(nextLibrary.map(i => i.id));
         for (const remote of data.library) {
-          if (!localIds.has(remote.id) && !deletedTombstones.has(remote.id)) {
+          if (!localIds.has(remote.id) && !deletedTombstones.codes.has(remote.id)) {
             remote._synced = true;
             nextLibrary.push(remote);
             changed = true;
@@ -536,10 +563,11 @@
 
       // 2. Reconcile Categories
       if (Array.isArray(data.categories) && data.categories.length > 0) {
+        const safeCategories = data.categories.filter(cat => !deletedTombstones.categories.has(cat));
         const set1 = new Set(state.categories);
-        const set2 = new Set(data.categories);
+        const set2 = new Set(safeCategories);
         if (set1.size !== set2.size || [...set1].some(c => !set2.has(c))) {
-          state.categories = data.categories;
+          state.categories = safeCategories;
           saveCategoriesToStorage();
           renderCategoryDropdowns();
           renderCategoryManageList();
@@ -548,8 +576,9 @@
 
       // 3. Reconcile Data Types
       if (Array.isArray(data.dataTypes) && data.dataTypes.length > 0) {
-        if (JSON.stringify(state.dataTypes) !== JSON.stringify(data.dataTypes)) {
-          state.dataTypes = data.dataTypes;
+        const safeTypes = data.dataTypes.filter(dt => !deletedTombstones.dataTypes.has(dt.id));
+        if (JSON.stringify(state.dataTypes) !== JSON.stringify(safeTypes)) {
+          state.dataTypes = safeTypes;
           saveTypesToStorage();
           renderTypeDropdown();
           renderTypeManageList();
@@ -805,13 +834,13 @@
     try {
       const saved = localStorage.getItem(CATEGORIES_STORAGE_KEY);
       if (saved) {
-        state.categories = JSON.parse(saved);
+        state.categories = JSON.parse(saved).filter(c => !deletedTombstones.categories.has(c));
       } else {
-        state.categories = [...DEFAULT_CATEGORIES];
+        state.categories = DEFAULT_CATEGORIES.filter(c => !deletedTombstones.categories.has(c));
         saveCategoriesToStorage();
       }
     } catch (e) {
-      state.categories = [...DEFAULT_CATEGORIES];
+      state.categories = DEFAULT_CATEGORIES.filter(c => !deletedTombstones.categories.has(c));
     }
   }
 
@@ -945,6 +974,8 @@
           return;
         }
         const removedCat = state.categories.splice(index, 1)[0];
+        deletedTombstones.categories.add(removedCat);
+        saveTombstones();
         saveCategoriesToStorage();
         deleteCategoryFromServer(removedCat);
         deleteCategoryFromSupabase(removedCat);
@@ -968,6 +999,8 @@
       return;
     }
 
+    deletedTombstones.categories.delete(val);
+    saveTombstones();
     state.categories.push(val);
     saveCategoriesToStorage();
     saveCategoryToServer(val);
@@ -988,13 +1021,13 @@
     try {
       const saved = localStorage.getItem(TYPES_STORAGE_KEY);
       if (saved) {
-        state.dataTypes = JSON.parse(saved);
+        state.dataTypes = JSON.parse(saved).filter(dt => !deletedTombstones.dataTypes.has(dt.id));
       } else {
-        state.dataTypes = [...DEFAULT_DATA_TYPES];
+        state.dataTypes = DEFAULT_DATA_TYPES.filter(dt => !deletedTombstones.dataTypes.has(dt.id));
         saveTypesToStorage();
       }
     } catch (e) {
-      state.dataTypes = [...DEFAULT_DATA_TYPES];
+      state.dataTypes = DEFAULT_DATA_TYPES.filter(dt => !deletedTombstones.dataTypes.has(dt.id));
     }
   }
 
@@ -1139,6 +1172,8 @@
           return;
         }
         const removed = state.dataTypes.splice(index, 1)[0];
+        deletedTombstones.dataTypes.add(removed.id);
+        saveTombstones();
         saveTypesToStorage();
         deleteDataTypeFromServer(removed.id);
         deleteDataTypeFromSupabase(removed.id);
@@ -1172,6 +1207,8 @@
       isBuiltin: false
     };
 
+    deletedTombstones.dataTypes.delete(id);
+    saveTombstones();
     state.dataTypes.push(newType);
     saveTypesToStorage();
     saveDataTypeToServer(newType);
@@ -1477,7 +1514,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       cloudCodes.forEach(c => cloudMap.set(c.id, c));
 
       // 1. Purge any tombstoned items that still linger in the cloud
-      for (const tombstoneId of deletedTombstones) {
+      for (const tombstoneId of deletedTombstones.codes) {
         if (cloudMap.has(tombstoneId)) {
           await deleteSingleQRCodeFromSupabase(tombstoneId, false);
         }
@@ -1486,11 +1523,11 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
       // 2. The Supabase cloud database is the single source of truth.
       // Filter out tombstoned items and construct active library
       const activeCloudItems = cloudCodes
-        .filter(remote => !deletedTombstones.has(remote.id))
+        .filter(remote => !deletedTombstones.codes.has(remote.id))
         .map(remote => ({
           id: remote.id,
           name: remote.name,
-          category: remote.category || 'Fleet & Buses',
+          category: remote.category || 'Tours',
           url: remote.url,
           subtitle: remote.subtitle || '',
           createdAt: remote.created_at,
@@ -1544,11 +1581,12 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
   async function syncSingleQRCodeToSupabase(item) {
     if (!state.supabase.connected || !state.supabase.tablesReady) return false;
+    if (deletedTombstones.codes.has(item.id)) return false;
     try {
       const payload = {
         id: item.id,
         name: item.name,
-        category: item.category || 'Fleet & Buses',
+        category: item.category || 'Tours',
         url: item.url,
         subtitle: item.subtitle || '',
         config_snapshot: item.configSnapshot || {},
@@ -1569,8 +1607,8 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
       if (res.ok) {
         item._synced = true;
-        if (deletedTombstones.has(item.id)) {
-          deletedTombstones.delete(item.id);
+        if (deletedTombstones.codes.has(item.id)) {
+          deletedTombstones.codes.delete(item.id);
           saveTombstones();
         }
         return true;
@@ -1584,7 +1622,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
   async function deleteSingleQRCodeFromSupabase(id, recordTombstone = true) {
     if (recordTombstone) {
-      deletedTombstones.add(id);
+      deletedTombstones.codes.add(id);
       saveTombstones();
     }
     if (!state.supabase.connected || !state.supabase.tablesReady) return false;
@@ -1617,8 +1655,19 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
       if (res.ok) {
         const cloudCats = await res.json();
-        if (Array.isArray(cloudCats) && cloudCats.length > 0) {
-          const names = cloudCats.map(c => (c.name || '').trim()).filter(Boolean);
+        if (Array.isArray(cloudCats)) {
+          // 1. Purge any tombstoned category that still lingers in Supabase
+          for (const tombCat of deletedTombstones.categories) {
+            if (cloudCats.some(c => (c.name || '').trim() === tombCat)) {
+              deleteCategoryFromSupabase(tombCat);
+            }
+          }
+
+          // 2. Filter out deleted categories
+          const names = cloudCats
+            .map(c => (c.name || '').trim())
+            .filter(name => Boolean(name) && !deletedTombstones.categories.has(name));
+
           const isDifferent = names.length !== state.categories.length ||
             names.some((n, idx) => n !== state.categories[idx]);
           if (isDifferent) {
@@ -1626,10 +1675,6 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
             saveCategoriesToStorage();
             renderCategoryDropdowns();
             renderCategoryManageList();
-          }
-        } else if (Array.isArray(cloudCats) && cloudCats.length === 0) {
-          for (const cat of state.categories) {
-            await syncCategoryToSupabase(cat);
           }
         }
       }
@@ -1640,6 +1685,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
   async function syncCategoryToSupabase(catName) {
     if (!state.supabase.connected || !state.supabase.tablesReady || !catName) return;
+    if (deletedTombstones.categories.has(catName.trim())) return;
     try {
       await fetch(`${state.supabase.url}/rest/v1/qr_categories`, {
         method: 'POST',
@@ -1657,6 +1703,8 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
   }
 
   async function deleteCategoryFromSupabase(catName) {
+    deletedTombstones.categories.add(catName.trim());
+    saveTombstones();
     if (!state.supabase.connected || !state.supabase.tablesReady || !catName) return;
     try {
       await fetch(`${state.supabase.url}/rest/v1/qr_categories?name=eq.${encodeURIComponent(catName.trim())}`, {
@@ -1685,15 +1733,25 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
       if (res.ok) {
         const cloudTypes = await res.json();
-        if (Array.isArray(cloudTypes) && cloudTypes.length > 0) {
-          const remoteMapped = cloudTypes.map(ct => ({
-            id: ct.id,
-            name: ct.name,
-            prefix: ct.prefix || '',
-            placeholder: ct.placeholder || '',
-            hint: ct.hint || '',
-            isBuiltin: !!ct.is_builtin
-          }));
+        if (Array.isArray(cloudTypes)) {
+          // 1. Purge any tombstoned data type that still lingers in Supabase
+          for (const tombId of deletedTombstones.dataTypes) {
+            if (cloudTypes.some(ct => ct.id === tombId)) {
+              deleteDataTypeFromSupabase(tombId);
+            }
+          }
+
+          // 2. Filter out tombstoned data types
+          const remoteMapped = cloudTypes
+            .filter(ct => !deletedTombstones.dataTypes.has(ct.id))
+            .map(ct => ({
+              id: ct.id,
+              name: ct.name,
+              prefix: ct.prefix || '',
+              placeholder: ct.placeholder || '',
+              hint: ct.hint || '',
+              isBuiltin: !!ct.is_builtin
+            }));
 
           const isDifferent = JSON.stringify(remoteMapped) !== JSON.stringify(state.dataTypes);
           if (isDifferent) {
@@ -1701,10 +1759,6 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
             saveTypesToStorage();
             renderTypeDropdown();
             renderTypeManageList();
-          }
-        } else if (Array.isArray(cloudTypes) && cloudTypes.length === 0) {
-          for (const dt of state.dataTypes) {
-            await syncDataTypeToSupabase(dt);
           }
         }
       }
@@ -1715,6 +1769,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
 
   async function syncDataTypeToSupabase(typeObj) {
     if (!state.supabase.connected || !state.supabase.tablesReady || !typeObj) return;
+    if (deletedTombstones.dataTypes.has(typeObj.id)) return;
     try {
       const payload = {
         id: typeObj.id,
@@ -1741,6 +1796,8 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
   }
 
   async function deleteDataTypeFromSupabase(typeId) {
+    deletedTombstones.dataTypes.add(typeId);
+    saveTombstones();
     if (!state.supabase.connected || !state.supabase.tablesReady || !typeId) return;
     try {
       await fetch(`${state.supabase.url}/rest/v1/qr_data_types?id=eq.${encodeURIComponent(typeId)}`, {
@@ -2457,8 +2514,8 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
     }
 
     // Remove from deleted tombstones if it was previously deleted
-    if (deletedTombstones.has(item.id)) {
-      deletedTombstones.delete(item.id);
+    if (deletedTombstones.codes.has(item.id)) {
+      deletedTombstones.codes.delete(item.id);
       saveTombstones();
     }
 
@@ -2580,7 +2637,7 @@ CREATE POLICY "Allow anon all on qr_data_types" ON public.qr_data_types FOR ALL 
         if (!confirmed) return;
 
         // Register tombstone so this client never re-uploads it
-        deletedTombstones.add(item.id);
+        deletedTombstones.codes.add(item.id);
         saveTombstones();
 
         state.library = state.library.filter(libItem => libItem.id !== item.id);

@@ -24,13 +24,11 @@ const SUPABASE_CONFIG = {
 
 // Initial Seed Data
 const DEFAULT_CATEGORIES = [
-  'Fleet & Buses',
+  'Tours',
   'Tickets & Booking',
   'Passenger Wi-Fi',
-  'Customer Feedback',
   'VIP Lounges',
-  'Social & Marketing',
-  'Operations'
+  'Social & Marketing'
 ];
 
 const DEFAULT_DATA_TYPES = [
@@ -71,21 +69,61 @@ function writeJson(filePath, data) {
   }
 }
 
+// Durable tombstone registry across all entities: codes, categories, dataTypes
+function getInitialDeleted() {
+  return {
+    codes: ['sun_1790089511605_8ahmz'],
+    categories: ['Fleet & Buses', 'Customer Feedback', 'Operations', 'tour'],
+    dataTypes: []
+  };
+}
+
+function readDeleted() {
+  const data = readJson(DELETED_FILE, getInitialDeleted());
+  if (Array.isArray(data)) {
+    return {
+      codes: data,
+      categories: ['Fleet & Buses', 'Customer Feedback', 'Operations', 'tour'],
+      dataTypes: []
+    };
+  }
+  return {
+    codes: Array.isArray(data?.codes) ? data.codes : [],
+    categories: Array.isArray(data?.categories) ? data.categories : [],
+    dataTypes: Array.isArray(data?.dataTypes) ? data.dataTypes : []
+  };
+}
+
+function upsertDeleted(kind, id) {
+  if (!id) return;
+  const deleted = readDeleted();
+  if (!deleted[kind]) deleted[kind] = [];
+  if (!deleted[kind].includes(id)) {
+    deleted[kind].push(id);
+    writeJson(DELETED_FILE, deleted);
+  }
+}
+
+function removeTombstone(kind, id) {
+  if (!id) return;
+  const deleted = readDeleted();
+  if (deleted[kind] && deleted[kind].includes(id)) {
+    deleted[kind] = deleted[kind].filter(x => x !== id);
+    writeJson(DELETED_FILE, deleted);
+  }
+}
+
+function isDeleted(kind, id) {
+  if (!id) return false;
+  const deleted = readDeleted();
+  return Array.isArray(deleted[kind]) && deleted[kind].includes(id);
+}
+
 // Initialize files if not existing
 if (!fs.existsSync(LIBRARY_FILE)) writeJson(LIBRARY_FILE, DEFAULT_LIBRARY);
 if (!fs.existsSync(CATEGORIES_FILE)) writeJson(CATEGORIES_FILE, DEFAULT_CATEGORIES);
 if (!fs.existsSync(TYPES_FILE)) writeJson(TYPES_FILE, DEFAULT_DATA_TYPES);
-if (!fs.existsSync(DELETED_FILE)) writeJson(DELETED_FILE, []);
-
-// Durable tombstone registry: ids that were deleted and must never come back
-function upsertDeleted(id) {
-  if (!id) return;
-  const deleted = readJson(DELETED_FILE, []);
-  if (!deleted.includes(id)) {
-    deleted.push(id);
-    writeJson(DELETED_FILE, deleted);
-  }
-}
+if (!fs.existsSync(DELETED_FILE)) writeJson(DELETED_FILE, getInitialDeleted());
 
 // Supabase Async Background Synchronizer
 async function mirrorToSupabase(endpoint, method, payload = null) {
@@ -108,6 +146,82 @@ async function mirrorToSupabase(endpoint, method, payload = null) {
   } catch (e) {
     return null;
   }
+}
+
+// Supabase Pull / Cloud Mirror to ensure single source of truth
+async function pullFromSupabase() {
+  try {
+    const headers = {
+      'apikey': SUPABASE_CONFIG.key,
+      'Authorization': `Bearer ${SUPABASE_CONFIG.key}`
+    };
+
+    // 1. Categories
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_categories?select=*&order=id.asc`, { headers });
+      if (res.ok) {
+        const cloudCats = await res.json();
+        if (Array.isArray(cloudCats) && cloudCats.length > 0) {
+          const deleted = readDeleted();
+          const names = cloudCats
+            .map(c => (c.name || '').trim())
+            .filter(name => Boolean(name) && !deleted.categories.includes(name));
+          if (names.length > 0) {
+            writeJson(CATEGORIES_FILE, names);
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Data Types
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_data_types?select=*&order=created_at.asc`, { headers });
+      if (res.ok) {
+        const cloudTypes = await res.json();
+        if (Array.isArray(cloudTypes) && cloudTypes.length > 0) {
+          const deleted = readDeleted();
+          const types = cloudTypes
+            .filter(ct => !deleted.dataTypes.includes(ct.id))
+            .map(ct => ({
+              id: ct.id,
+              name: ct.name,
+              prefix: ct.prefix || '',
+              placeholder: ct.placeholder || '',
+              hint: ct.hint || '',
+              isBuiltin: !!ct.is_builtin
+            }));
+          if (types.length > 0) {
+            writeJson(TYPES_FILE, types);
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 3. QR Codes
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/qr_codes?select=*&order=created_at.desc`, { headers });
+      if (res.ok) {
+        const cloudCodes = await res.json();
+        if (Array.isArray(cloudCodes)) {
+          const deleted = readDeleted();
+          const activeCodes = cloudCodes
+            .filter(c => !deleted.codes.includes(c.id))
+            .map(c => ({
+              id: c.id,
+              name: c.name,
+              category: c.category || 'Tours',
+              url: c.url,
+              subtitle: c.subtitle || '',
+              createdAt: c.created_at,
+              updatedAt: c.updated_at || c.created_at,
+              configSnapshot: c.config_snapshot || {},
+              _synced: true
+            }));
+          writeJson(LIBRARY_FILE, activeCodes);
+        }
+      }
+    } catch (e) {}
+  } catch (err) {}
 }
 
 const MIME_TYPES = {
@@ -162,10 +276,19 @@ const server = http.createServer(async (req, res) => {
     const library = readJson(LIBRARY_FILE, DEFAULT_LIBRARY);
     const categories = readJson(CATEGORIES_FILE, DEFAULT_CATEGORIES);
     const dataTypes = readJson(TYPES_FILE, DEFAULT_DATA_TYPES);
-    const deleted = readJson(DELETED_FILE, []);
+    const deleted = readDeleted();
+
+    const safeLibrary = (library || []).filter(item => !deleted.codes.includes(item.id));
+    const safeCategories = (categories || []).filter(cat => !deleted.categories.includes(cat));
+    const safeTypes = (dataTypes || []).filter(dt => !deleted.dataTypes.includes(dt.id));
 
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' });
-    res.end(JSON.stringify({ library, categories, dataTypes, deleted }));
+    res.end(JSON.stringify({
+      library: safeLibrary,
+      categories: safeCategories,
+      dataTypes: safeTypes,
+      deleted
+    }));
     return;
   }
 
@@ -181,7 +304,7 @@ const server = http.createServer(async (req, res) => {
 
     // A globally-deleted item must stay deleted. Suppress any re-save so it
     // can never be resurrected by a stale client or a fresh browser.
-    if (readJson(DELETED_FILE, []).includes(item.id)) {
+    if (isDeleted('codes', item.id)) {
       let library = readJson(LIBRARY_FILE, DEFAULT_LIBRARY);
       library = library.filter(i => i.id !== item.id);
       writeJson(LIBRARY_FILE, library);
@@ -190,6 +313,9 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ success: true, tombstoned: true, item }));
       return;
     }
+
+    // Explicitly un-tombstone if user created a brand-new item reusing this ID
+    removeTombstone('codes', item.id);
 
     const library = readJson(LIBRARY_FILE, DEFAULT_LIBRARY);
     const index = library.findIndex(i => i.id === item.id);
@@ -206,7 +332,7 @@ const server = http.createServer(async (req, res) => {
     mirrorToSupabase('qr_codes', 'POST', {
       id: item.id,
       name: item.name,
-      category: item.category || 'Fleet & Buses',
+      category: item.category || 'Tours',
       url: item.url,
       subtitle: item.subtitle || '',
       config_snapshot: item.configSnapshot || {},
@@ -234,7 +360,7 @@ const server = http.createServer(async (req, res) => {
     writeJson(LIBRARY_FILE, library);
 
     // Record durable tombstone so every client keeps it deleted forever
-    upsertDeleted(id);
+    upsertDeleted('codes', id);
 
     // Asynchronously mirror delete to Supabase
     mirrorToSupabase(`qr_codes?id=eq.${encodeURIComponent(id)}`, 'DELETE');
@@ -249,6 +375,7 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const name = (body.name || '').trim();
     if (name) {
+      removeTombstone('categories', name);
       const categories = readJson(CATEGORIES_FILE, DEFAULT_CATEGORIES);
       if (!categories.includes(name)) {
         categories.push(name);
@@ -266,6 +393,7 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const name = (body.name || '').trim();
     if (name) {
+      upsertDeleted('categories', name);
       let categories = readJson(CATEGORIES_FILE, DEFAULT_CATEGORIES);
       categories = categories.filter(c => c !== name);
       writeJson(CATEGORIES_FILE, categories);
@@ -281,6 +409,7 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const typeObj = body.type;
     if (typeObj && typeObj.id) {
+      removeTombstone('dataTypes', typeObj.id);
       const types = readJson(TYPES_FILE, DEFAULT_DATA_TYPES);
       const idx = types.findIndex(t => t.id === typeObj.id);
       if (idx >= 0) types[idx] = typeObj;
@@ -306,6 +435,7 @@ const server = http.createServer(async (req, res) => {
     const body = await readBody(req);
     const id = body.id;
     if (id) {
+      upsertDeleted('dataTypes', id);
       let types = readJson(TYPES_FILE, DEFAULT_DATA_TYPES);
       types = types.filter(t => t.id !== id);
       writeJson(TYPES_FILE, types);
@@ -392,4 +522,8 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  💻 Laptop (Local):   http://localhost:${PORT}`);
   console.log(`  📱 Phone (Network):  http://${ip}:${PORT}`);
   console.log(`======================================================\n`);
+
+  // Initial pull and periodic sync with Supabase cloud database
+  pullFromSupabase();
+  setInterval(pullFromSupabase, 15000);
 });

@@ -12,7 +12,7 @@
     "name": "Bus Wi-Fi Connect",
     "prefix": "WIFI:",
     "placeholder": "",
-    "hint": "Instant connect to coach onboard Wi-Fi hotspot",
+    "hint": "Direct one-tap passenger onboard Wi-Fi connection",
     "isBuiltin": true
   },
   {
@@ -69,6 +69,14 @@
     "prefix": "https://maps.google.com/?q=",
     "placeholder": "Sunseekers Terminal, Cape Town",
     "hint": "Opens Google Maps navigation directly to terminal",
+    "isBuiltin": false
+  },
+  {
+    "id": "instagram",
+    "name": "Instagram Profile",
+    "prefix": "https://instagram.com/",
+    "placeholder": "sunseekerstravel",
+    "hint": "Direct link to company social profile",
     "isBuiltin": false
   }
 ]
